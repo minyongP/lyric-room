@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { AiGuide } from "./AiGuide";
 import {
   Image,
   Type,
@@ -38,6 +39,7 @@ export function Inspector({
     jsonFile = useRef<HTMLInputElement>(null);
   const [json, setJson] = useState<string | null>(null),
     [validation, setValidation] = useState("");
+  const [guide, setGuide] = useState(false);
   const s = p.style;
   function style<K extends keyof Style>(key: K, value: Style[K]) {
     update({ style: { ...s, [key]: value } });
@@ -244,23 +246,12 @@ export function Inspector({
                 e.target.value = "";
               }}
             />
-            <button
-              className="quiet wide"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(
-                    `가사를 다음 JSON으로 정리해 주세요. 시간은 초 단위, 0 ≤ start < end ≤ ${p.duration.toFixed(2)}, 오름차순, 구절 겹침 금지. 시간은 음원을 듣고 확인하고 추정값이면 별도로 알려 주세요. 형식: {"schemaVersion":1,"lyrics":[{"start":0,"end":3,"original":"원문","pronunciation":"발음 (선택)","translation":"번역 (선택)"}]}`,
-                  );
-                  onError("AI용 형식을 복사했습니다.");
-                } catch {
-                  onError(
-                    "클립보드 접근이 불가능합니다. JSON 가져오기에서 형식을 확인해 주세요.",
-                  );
-                }
-              }}
-            >
-              AI용 형식 복사
+            <button className="quiet wide" onClick={() => setGuide(true)}>
+              AI 요청 가이드
             </button>
+            <p className="hint">
+              MP3 준비부터 외국어 발음·번역 요청, JSON 가져오기까지
+            </p>
             {toggle("showLyrics", "가사 표시")}
             {toggle("showOriginal", "원문")}
             {toggle("showPronunciation", "발음")}
@@ -479,6 +470,19 @@ export function Inspector({
           </p>
         )}
       </div>
+      {guide && (
+        <AiGuide
+          duration={p.duration}
+          onClose={() => setGuide(false)}
+          onImport={() => {
+            setGuide(false);
+            setValidation("");
+            setJson(
+              JSON.stringify({ schemaVersion: 1, lyrics: p.lyrics }, null, 2),
+            );
+          }}
+        />
+      )}
       {json !== null && (
         <div className="modal-backdrop">
           <section

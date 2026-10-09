@@ -854,3 +854,44 @@ p {
     overflow: visible;
   }
 }
+.ai-guide {
+  width: 720px;
+  color: #ebebee;
+}
+.ai-guide::backdrop {
+  background: #08080bc9;
+}
+.guide-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.guide-heading h2 {
+  margin: 8px 0;
+}
+.guide-steps {
+  padding-left: 22px;
+}
+.guide-steps li {
+  padding: 8px 0 0 6px;
+}
+.guide-steps p {
+  margin: 6px 0;
+}
+.ai-guide details {
+  border-top: 1px solid #45454c;
+  padding: 16px 0 0;
+}
+.ai-guide summary {
+  cursor: pointer;
+}
+.guide-prompt {
+  height: 240px;
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.ai-guide > [role="status"] {
+  color: #e4e4ea;
+}
