@@ -22,6 +22,19 @@ test("AI guide explains foreign lyrics and provides a full prompt and import han
   await page
     .getByRole("button", { name: "AI 요청 가이드", exact: true })
     .click();
+  for (const name of ["한국곡", "영어곡", "일본곡", "기타"]) {
+    await dialog.getByRole("radio", { name, exact: true }).check();
+    await expect(
+      dialog.getByRole("radio", { name, exact: true }),
+    ).toBeChecked();
+    const text = await dialog.getByLabel("AI에게 보낼 요청문").inputValue();
+    expect(text).toContain("제공한 원문 가사만");
+    if (name === "한국곡") expect(text).toContain("발음과 번역 필드는 생략");
+    if (name === "영어곡") expect(text).toContain("연음");
+    if (name === "일본곡") expect(text).toContain("한자의 읽기");
+    if (name === "기타") expect(text).toContain("언어를 먼저 확인");
+  }
+  await dialog.getByRole("radio", { name: "일본곡", exact: true }).check();
   const prompt = await dialog.getByLabel("AI에게 보낼 요청문").inputValue();
   expect(prompt).toContain("3.00");
   expect(prompt).toContain("일본어");

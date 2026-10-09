@@ -5,12 +5,13 @@ test("shared renderer scrolls upward continuously and fills instrumental gaps", 
   page,
 }) => {
   const p = newProject(randomUUID());
-  p.duration = 10;
+  p.duration = 12;
   p.lyrics = [
     { start: 0, end: 2, original: "첫 구절" },
     { start: 2, end: 4, original: "다가오는 구절" },
-    { start: 7, end: 9, original: "다시 노래해요" },
+    { start: 9, end: 11, original: "다시 노래해요" },
   ];
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto("/render.html");
   const result = await page.evaluate(async (p) => {
     const bridge = (window as any).renderBridge;
@@ -33,7 +34,7 @@ test("shared renderer scrolls upward continuously and fills instrumental gaps", 
       calls = [];
       const gap = await bridge.render(5);
       const interlude = calls.some((c) => c.text === "간주 중");
-      await bridge.render(8);
+      await bridge.render(10);
       const same = gap === (await bridge.render(5));
       return { ys, interlude, same };
     } finally {

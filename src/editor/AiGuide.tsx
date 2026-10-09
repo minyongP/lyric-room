@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import promptTemplate from "../../examples/ai-prompt.md?raw";
+import { buildAiPrompt, guideLanguages, type GuideLanguage } from "./ai-prompt";
 export function AiGuide({
   duration,
   onClose,
@@ -12,7 +12,9 @@ export function AiGuide({
   const dialog = useRef<HTMLDialogElement>(null),
     field = useRef<HTMLTextAreaElement>(null);
   const [message, setMessage] = useState("");
-  const prompt = `현재 음원의 전체 길이는 ${duration.toFixed(2)}초입니다. 모든 end는 이 길이를 넘기지 마세요.\n\n${promptTemplate.trim()}`;
+  const [language, setLanguage] = useState<GuideLanguage>("ko");
+  const selected = guideLanguages.find((x) => x.id === language)!;
+  const prompt = buildAiPrompt(language, duration);
   useEffect(() => {
     dialog.current?.showModal();
     return () => dialog.current?.close();
@@ -34,23 +36,48 @@ export function AiGuide({
         </button>
       </div>
       <p>
-        오디오 파일을 직접 분석할 수 있는 AI에 MP3와 아래 요청문을 함께
-        보내세요. 현재 곡 길이가 요청문에 반영됩니다.
+        곡 종류를 선택하고, 오디오 파일을 직접 분석할 수 있는 AI에 MP3·원문
+        가사·요청문을 함께 보내세요. 현재 곡 길이가 요청문에 반영됩니다.
       </p>
+      <fieldset className="guide-languages">
+        <legend>곡 종류</legend>
+        <div>
+          {guideLanguages.map((item) => (
+            <label
+              key={item.id}
+              className={language === item.id ? "selected" : ""}
+            >
+              <input
+                type="radio"
+                name="guide-language"
+                value={item.id}
+                checked={language === item.id}
+                onChange={() => {
+                  setLanguage(item.id);
+                  setMessage("");
+                }}
+              />
+              {item.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <p className="guide-language-summary">{selected.description}</p>
       <ol className="guide-steps">
         <li>
           <strong>MP3와 원문 가사 준비</strong>
           <p>
-            편집 중인 MP3를 AI 대화에 직접 첨부하세요. 알고 있는 원문 가사도
-            함께 주면 확인하기 좋습니다. 이 앱이 파일을 AI에 자동 전송하지는
-            않습니다.
+            편집 중인 MP3를 AI 대화에 첨부하고 직접 준비한 원문 가사를
+            붙여넣으세요. 제공한 가사의 시간 정렬·변환을 요청하는 방식입니다. 이
+            앱이 파일을 AI에 자동 전송하지는 않습니다.
           </p>
         </li>
         <li>
           <strong>요청문 복사해서 보내기</strong>
           <p>
-            외국곡·일본곡은 원문, 한글 발음, 한국어 번역을 요청합니다. 한국어
-            가사는 발음·번역을 생략합니다.
+            선택한 곡 종류에 맞는 요청문을 복사합니다. 요청문 맨 아래에 원문
+            가사를 넣어 보내세요. AI마다 오디오 분석과 텍스트 처리의 지원 범위는
+            다를 수 있습니다.
           </p>
         </li>
         <li>

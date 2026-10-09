@@ -7,6 +7,8 @@ import {
   AudioLines,
   Upload,
   RotateCcw,
+  BookOpen,
+  ChevronRight,
 } from "lucide-react";
 import type { Project, Style, Part, Box } from "../shared/project";
 import { defaultStyle } from "../shared/project";
@@ -248,11 +250,16 @@ export function Inspector({
                 e.target.value = "";
               }}
             />
-            <button className="quiet wide" onClick={() => setGuide(true)}>
-              AI 요청 가이드
+            <button
+              className="ai-guide-button wide"
+              onClick={() => setGuide(true)}
+            >
+              <BookOpen size={17} aria-hidden="true" />
+              <span>AI 요청 가이드</span>
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
             <p className="hint">
-              MP3 준비부터 외국어 발음·번역 요청, JSON 가져오기까지
+              한국곡 · 영어곡 · 일본곡 · 기타 언어별 요청문
             </p>
             {toggle("showLyrics", "가사 표시")}
             {toggle("showOriginal", "원문")}

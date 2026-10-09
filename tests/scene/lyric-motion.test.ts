@@ -17,25 +17,53 @@ test("cue transition starts at the old position and moves smoothly upward", () =
   expect(y(middle, 1)).toBeGreaterThan(y(settled, 1));
   expect(y(settled, 1)).toBe(0);
 });
-test("long gaps have an interlude row but short breathing gaps do not flash a label", () => {
-  expect(lyricMotion(cues, 14, 8).find((r) => r.offset === 0)?.label).toBe(
+test("only internal gaps of at least five seconds show an interlude", () => {
+  const long = [
+    { start: 8, end: 10, original: "a" },
+    { start: 15, end: 17, original: "b" },
+  ];
+  expect(lyricMotion(long, 25, 12).find((r) => r.offset === 0)?.label).toBe(
     "간주 중",
   );
-  expect(lyricMotion(cues, 14, 1).find((r) => r.offset === 0)?.label).toBe(
-    "전주 중",
-  );
-  expect(lyricMotion(cues, 14, 13).find((r) => r.offset === 0)?.label).toBe(
-    "후주 중",
-  );
+  for (const time of [0, 5, 18, 24])
+    expect(lyricMotion(long, 25, time).every((r) => r.opacity === 0)).toBe(
+      true,
+    );
+  expect(lyricMotion(cues, 14, 8).find((r) => r.offset === 0)).toMatchObject({
+    cue: undefined,
+    label: undefined,
+  });
   const short = [
     { start: 0, end: 1, original: "a" },
     { start: 1.2, end: 2, original: "b" },
   ];
-  expect(lyricMotion(short, 2, 1.1).some((r) => r.label)).toBe(false);
+  const blank = lyricMotion(short, 2, 1.15).find((r) => r.offset === 0);
+  expect(blank).toMatchObject({ cue: undefined, label: undefined });
+  expect(lyricMotion(long, 25, 9).some((r) => r.label)).toBe(false);
+  expect(lyricMotion(long, 25, 15.7).some((r) => r.label)).toBe(false);
 });
-test("seeking is deterministic and empty lyrics show a listening state", () => {
+test("seeking is deterministic and empty lyrics stay blank", () => {
   const initial = lyricMotion(cues, 14, 4.2);
   lyricMotion(cues, 14, 11);
   expect(lyricMotion(cues, 14, 4.2)).toEqual(initial);
-  expect(lyricMotion([], 10, 3)[0].label).toBe("음악 감상 중");
+  expect(lyricMotion([], 10, 3).every((r) => !r.label && r.opacity === 0)).toBe(
+    true,
+  );
+});
+
+test("short gaps do not replace previous and next lyric previews while singing", () => {
+  const lyrics = [
+    { start: 0, end: 1, original: "a" },
+    { start: 1.2, end: 3, original: "b" },
+    { start: 3.2, end: 5, original: "c" },
+  ];
+  const rows = lyricMotion(lyrics, 5, 2);
+  expect(rows.find((r) => r.cue === 0)).toMatchObject({
+    offset: -1,
+    opacity: 0.38,
+  });
+  expect(rows.find((r) => r.cue === 2)).toMatchObject({
+    offset: 1,
+    opacity: 0.38,
+  });
 });
