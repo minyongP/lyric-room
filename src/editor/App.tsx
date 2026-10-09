@@ -20,7 +20,8 @@ import { Preview } from "./Preview";
 import type { Box, ExportJob, Part, Style } from "../shared/project";
 import { formatTime } from "../shared/project";
 import { parseLyrics } from "../shared/lyrics";
-import { assetUrl } from "../scene/media";
+import { assetUrl, loadFonts } from "../scene/media";
+import { findOverflowCues } from "../scene/draw";
 import { emptySpectrum, type Spectrum } from "../audio/spectrum";
 export default function App() {
   const state = useProject(),
@@ -45,7 +46,11 @@ export default function App() {
   const audio = useRef<HTMLAudioElement>(null),
     audioInput = useRef<HTMLInputElement>(null),
     projectRef = useRef(p),
-    changeVersion = useRef(0);
+    changeVersion = useRef(0),
+    assetVersions = useRef({ background: 0, cover: 0 }),
+    pendingAssets = useRef(new Set<symbol>());
+  const [assetBusy, setAssetBusy] = useState(false);
+  const busy = state.busy || assetBusy;
   projectRef.current = p;
   useEffect(() => {
     api<typeof health>("/health")
@@ -58,6 +63,8 @@ export default function App() {
     setSpectrum(emptySpectrum);
     setOverflow([]);
     changeVersion.current++;
+    pendingAssets.current.clear();
+    setAssetBusy(false);
     if (!p?.audioId) return;
     let cancelled = false;
     setAnalyzing(true);
@@ -157,20 +164,35 @@ export default function App() {
   async function asset(file: File, role: "background" | "cover") {
     if (!p) return;
     const id = p.id,
-      version = ++changeVersion.current;
-    state.setBusy(true);
+      projectVersion = changeVersion.current,
+      version = ++assetVersions.current[role],
+      ticket = Symbol();
+    const current = () =>
+      projectRef.current?.id === id &&
+      projectVersion === changeVersion.current &&
+      version === assetVersions.current[role];
+    pendingAssets.current.add(ticket);
+    setAssetBusy(true);
     try {
       const item = await upload(id, file, role);
-      if (projectRef.current?.id === id && version === changeVersion.current)
+      if (current())
         state.update(
           role === "cover" ? { coverId: item.id } : { backgroundId: item.id },
         );
     } catch (e) {
-      state.setError((e as Error).message);
+      if (current()) state.setError((e as Error).message);
     } finally {
-      if (version === changeVersion.current) state.setBusy(false);
+      pendingAssets.current.delete(ticket);
+      setAssetBusy(pendingAssets.current.size > 0);
     }
   }
+  function removeAsset(role: "background" | "cover") {
+    assetVersions.current[role]++;
+    state.update(
+      role === "cover" ? { coverId: undefined } : { backgroundId: undefined },
+    );
+  }
+
   function box(part: Part, b: Box) {
     state.setProject((previous) =>
       previous
@@ -183,10 +205,13 @@ export default function App() {
     try {
       const valid = parseLyrics({ lyrics: p.lyrics }, p.duration);
       if (!valid.ok) throw Error("가사 시간을 확인한 뒤 내보내 주세요.");
+      await loadFonts(p);
+      const canvas = document.createElement("canvas");
+      const overflowing = findOverflowCues(canvas.getContext("2d")!, p);
       if (
-        overflow.length &&
+        overflowing.length &&
         !window.confirm(
-          "긴 가사가 잘릴 수 있습니다. 글자 크기나 패널을 조절하는 것을 권장합니다. 계속할까요?",
+          `구절 ${overflowing.map((i) => i + 1).join(", ")}의 가사가 잘릴 수 있습니다. 글자 크기나 패널을 조절해 주세요. 계속할까요?`,
         )
       )
         return;
@@ -219,7 +244,7 @@ export default function App() {
         className="play-button"
         aria-label={playing ? "일시정지" : "재생"}
         onClick={togglePlay}
-        disabled={!p?.audioId || state.busy}
+        disabled={!p?.audioId || busy}
       >
         {playing ? <Pause size={24} /> : <Play size={24} />}
       </button>
@@ -321,7 +346,7 @@ export default function App() {
             {playMode ? "편집으로" : "플레이 화면"}
           </button>
           <button
-            disabled={!p || state.busy}
+            disabled={!p || busy}
             onClick={() => void save().catch(() => {})}
           >
             <Save size={15} />
@@ -331,7 +356,7 @@ export default function App() {
             className="primary"
             disabled={
               !p?.audioId ||
-              state.busy ||
+              busy ||
               !!activeJob ||
               !health?.ffmpeg ||
               !health?.chromium
@@ -367,7 +392,7 @@ export default function App() {
           </button>
         </div>
       )}
-      {state.busy && (
+      {busy && (
         <div className="busy-bar" role="status">
           파일 처리 중…
         </div>
@@ -382,7 +407,7 @@ export default function App() {
           <p>한 곡을 열고, 가사를 더하고, 당신의 영상으로 만드세요.</p>
           <button
             className="primary"
-            disabled={state.busy}
+            disabled={busy}
             onClick={() => audioInput.current?.click()}
           >
             <FolderOpen size={18} />
@@ -544,6 +569,7 @@ export default function App() {
                 part={part}
                 update={state.update}
                 onAsset={asset}
+                onRemoveAsset={removeAsset}
                 onSeek={seek}
                 onError={notify}
               />

@@ -2,6 +2,7 @@ import { test, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createStore } from "../../server/store";
 let root: string;
 beforeEach(async () => {
@@ -28,5 +29,26 @@ test("rejects arbitrary paths, missing and foreign asset IDs", async () => {
   await writeFile(bad, "this is not audio");
   await expect(
     store.importAsset(p.id, bad, "broken.mp3", "audio"),
+  ).rejects.toThrow();
+});
+
+test("same Korean filename has independent asset IDs and cannot cross projects", async () => {
+  const store = createStore(root),
+    p = await store.create(),
+    other = await store.create();
+  const source = fileURLToPath(
+    new URL("../../.local-data/fixtures/짧은 샘플.mp3", import.meta.url),
+  );
+  const first = await store.importAsset(p.id, source, "한글 음악.mp3", "audio");
+  const second = await store.importAsset(
+    p.id,
+    source,
+    "한글 음악.mp3",
+    "audio",
+  );
+  expect(first.id).not.toBe(second.id);
+  expect(first.originalName).toBe("한글 음악.mp3");
+  await expect(
+    store.save({ ...other, audioId: first.id, duration: first.duration! }),
   ).rejects.toThrow();
 });

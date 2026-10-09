@@ -817,3 +817,40 @@ p {
   border-top: 0;
   padding-top: 0;
 }
+
+@media (min-width: 721px) {
+  .app {
+    height: 100dvh;
+    min-height: 0;
+  }
+  .app-header,
+  .app-footer,
+  .banner,
+  .busy-bar,
+  .export-status {
+    flex-shrink: 0;
+  }
+  .workspace {
+    overflow: hidden;
+  }
+  .stage {
+    max-height: 100%;
+    overflow: auto;
+  }
+  .inspector {
+    overflow-y: auto;
+  }
+  .inspector > header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #202023;
+  }
+  .play-mode .workspace {
+    overflow-y: auto;
+  }
+  .play-mode .stage {
+    max-height: none;
+    overflow: visible;
+  }
+}

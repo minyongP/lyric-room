@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { abortable } from "../abortable";
 import { mkdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
 import type { Project, ExportJob } from "../../src/shared/project";
@@ -8,9 +9,13 @@ import type { Spectrum } from "../../src/audio/spectrum";
 import type { Store } from "../store";
 import { probeFile } from "../probe";
 export function createWorker(
-  store: Store,
+  store: Pick<Store, "root" | "resolveAsset">,
   origin: string,
-  analysis: (id: string, audioId: string) => Promise<Spectrum>,
+  analysis: (
+    id: string,
+    audioId: string,
+    signal?: AbortSignal,
+  ) => Promise<Spectrum>,
 ) {
   return async (
     p: Project,
@@ -22,7 +27,10 @@ export function createWorker(
       if (signal.aborted) throw Error("취소됨");
     };
     check();
-    const spectrum = await analysis(p.id, p.audioId!);
+    const spectrum = await abortable(
+      analysis(p.id, p.audioId!, signal),
+      signal,
+    );
     check();
     const outDir = join(store.root, "exports");
     await mkdir(outDir, { recursive: true });

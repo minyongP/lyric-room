@@ -35,6 +35,47 @@ function image(
     ih * factor,
   );
 }
+function fontFamily(p: Project) {
+  return p.style.fontFamily === "serif"
+    ? 'Georgia,"Noto Sans KR","Noto Sans JP",serif'
+    : '"Noto Sans KR","Noto Sans JP",sans-serif';
+}
+function cueLayout(
+  ctx: CanvasRenderingContext2D,
+  p: Project,
+  index: number,
+  active: boolean,
+) {
+  const s = p.style,
+    raw = p.lyrics[index];
+  const cue = {
+    ...raw,
+    original: s.showOriginal ? raw.original : "",
+    pronunciation: s.showPronunciation ? raw.pronunciation : undefined,
+    translation: s.showTranslation ? raw.translation : undefined,
+  };
+  return layoutCue(
+    cue,
+    s.fontSize * (active ? 1 : 0.65),
+    (text, font) => {
+      ctx.font = `${active ? "700" : "400"} ${font}px ${fontFamily(p)}`;
+      return ctx.measureText(text).width;
+    },
+    s.lyricsBox.w - 80,
+    s.lyricsBox.h * (active ? 0.4 : 0.25),
+    s.lineGap,
+  );
+}
+/** Run once per export snapshot, including cues outside the current viewport. */
+export function findOverflowCues(ctx: CanvasRenderingContext2D, p: Project) {
+  if (!p.style.showLyrics) return [];
+  return p.lyrics.flatMap((_, index) =>
+    cueLayout(ctx, p, index, true).overflow ||
+    cueLayout(ctx, p, index, false).overflow
+      ? [index]
+      : [],
+  );
+}
 export function drawScene(
   ctx: CanvasRenderingContext2D,
   p: Project,
@@ -75,10 +116,7 @@ export function drawScene(
     ctx.fillRect(0, 0, W, H);
   }
   ctx.restore();
-  const family =
-    s.fontFamily === "serif"
-      ? 'Georgia,"Noto Sans KR","Noto Sans JP",serif'
-      : '"Noto Sans KR","Noto Sans JP",sans-serif';
+  const family = fontFamily(p);
   if (s.showLyrics) {
     const b = s.lyricsBox;
     ctx.save();
@@ -96,25 +134,7 @@ export function drawScene(
     ];
     for (const { i, y, active } of positions) {
       if (i === null) continue;
-      const raw = p.lyrics[i],
-        cue = {
-          ...raw,
-          original: s.showOriginal ? raw.original : "",
-          pronunciation: s.showPronunciation ? raw.pronunciation : undefined,
-          translation: s.showTranslation ? raw.translation : undefined,
-        };
-      const size = s.fontSize * (active ? 1 : 0.65),
-        layout = layoutCue(
-          cue,
-          size,
-          (text, font) => {
-            ctx.font = `${active ? "700" : "400"} ${font}px ${family}`;
-            return ctx.measureText(text).width;
-          },
-          b.w - 80,
-          b.h * (active ? 0.4 : 0.25),
-          s.lineGap,
-        );
+      const layout = cueLayout(ctx, p, i, active);
       if (layout.overflow) overflowCueIndices.push(i);
       let cy = y - layout.height / 2;
       ctx.fillStyle = s.textColor;

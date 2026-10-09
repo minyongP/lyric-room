@@ -22,6 +22,7 @@ export function Inspector({
   part,
   update,
   onAsset,
+  onRemoveAsset,
   onSeek,
   onError,
 }: {
@@ -29,6 +30,7 @@ export function Inspector({
   part: Part;
   update: (x: Partial<Project>) => void;
   onAsset: (file: File, role: "background" | "cover") => Promise<void>;
+  onRemoveAsset: (role: "background" | "cover") => void;
   onSeek: (t: number) => void;
   onError: (s: string) => void;
 }) {
@@ -164,7 +166,7 @@ export function Inspector({
             {p.backgroundId && (
               <button
                 className="quiet wide"
-                onClick={() => update({ backgroundId: undefined })}
+                onClick={() => onRemoveAsset("background")}
               >
                 배경 제거
               </button>
@@ -392,7 +394,7 @@ export function Inspector({
             {p.coverId && (
               <button
                 className="quiet wide"
-                onClick={() => update({ coverId: undefined })}
+                onClick={() => onRemoveAsset("cover")}
               >
                 커버 제거
               </button>
