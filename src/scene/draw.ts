@@ -1,7 +1,7 @@
 import { drawVisualizer } from "./visualizer";
 import type { Box, Project } from "../shared/project";
 import { formatTime } from "../shared/project";
-import { cueWindow } from "../shared/lyrics";
+import { lyricMotion } from "./lyric-motion";
 import { type Spectrum } from "../audio/spectrum";
 import { layoutCue } from "./layout";
 import type { SceneMedia } from "./media";
@@ -134,32 +134,53 @@ export function drawScene(
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.clip();
-    const window = cueWindow(p.lyrics, t);
-    const positions = [
-      { i: window.previous, y: b.y + b.h * 0.2, active: false },
-      { i: window.current, y: b.y + b.h * 0.51, active: true },
-      { i: window.next, y: b.y + b.h * 0.83, active: false },
-    ];
-    for (const { i, y, active } of positions) {
-      if (i === null) continue;
-      const layout = cueLayout(ctx, p, i, active);
-      if (layout.overflow) overflowCueIndices.push(i);
-      let cy = y - layout.height / 2;
+    const rows = lyricMotion(p.lyrics, p.duration, t);
+    for (const row of rows) {
+      if (row.opacity <= 0) continue;
+      const y = b.y + b.h * (0.51 + row.offset * 0.315);
+      ctx.save();
+      ctx.globalAlpha = row.opacity;
       ctx.fillStyle = s.textColor;
-      ctx.globalAlpha = active ? 1 : 0.42;
-      ctx.textBaseline = "top";
-      ctx.textAlign = s.align;
-      const x =
-        s.align === "center"
-          ? b.x + b.w / 2
-          : s.align === "left"
-            ? b.x + 40
-            : b.x + b.w - 40;
-      for (const l of layout.lines) {
-        ctx.font = `${active ? "700" : "400"} ${l.size}px ${family}`;
-        ctx.fillText(l.text, x, cy);
-        cy += l.size * 1.3 + s.lineGap;
+      if (row.label) {
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = `400 ${s.fontSize * 0.66 * row.scale}px ${family}`;
+        ctx.fillText(row.label, b.x + b.w / 2, y - 12 * row.scale);
+        for (let dot = 0; dot < 3; dot++) {
+          const pulse =
+            0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 3.8 - dot * 0.8));
+          ctx.globalAlpha = row.opacity * pulse;
+          ctx.beginPath();
+          ctx.arc(
+            b.x + b.w / 2 + (dot - 1) * 20 * row.scale,
+            y + 28 * row.scale,
+            3.5 * row.scale,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+      } else if (row.cue !== undefined) {
+        const layout = cueLayout(ctx, p, row.cue, true);
+        if (layout.overflow) overflowCueIndices.push(row.cue);
+        const x =
+          s.align === "center"
+            ? b.x + b.w / 2
+            : s.align === "left"
+              ? b.x + 40
+              : b.x + b.w - 40;
+        ctx.translate(x, y);
+        ctx.scale(row.scale, row.scale);
+        let cy = -layout.height / 2;
+        ctx.textBaseline = "top";
+        ctx.textAlign = s.align;
+        for (const line of layout.lines) {
+          ctx.font = `700 ${line.size}px ${family}`;
+          ctx.fillText(line.text, 0, cy);
+          cy += line.size * 1.3 + s.lineGap;
+        }
       }
+      ctx.restore();
     }
     ctx.restore();
   }

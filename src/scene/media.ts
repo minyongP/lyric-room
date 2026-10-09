@@ -124,8 +124,8 @@ export async function loadFonts(project?: Project) {
             ]),
           ].join(""),
         ),
-      ].join("") + "0123456789:"
-    : "가나다 ABC 0123456789:";
+      ].join("") + "0123456789: 전주 중 간주 중 후주 중 음악 감상 중"
+    : "가나다 ABC 0123456789: 전주 중 간주 중 후주 중 음악 감상 중";
   await Promise.all(
     ["Noto Sans KR", "Noto Sans JP"].flatMap((family) =>
       ["400", "700"].map((weight) =>
