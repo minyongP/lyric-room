@@ -21,24 +21,52 @@ Lyric Room은 브라우저에서 사용하는 로컬 음악 영상 편집기입�
 | 로컬 자동 저장 | 편집을 0.75초 멈추면 저장, 저장 상태 표시, 프로젝트 다시 열기 |
 | MP4 내보내기 | 1920×1080 · 30fps · H.264 영상과 AAC 오디오 출력 |
 
-현재는 **MVP**이며, macOS와 Chromium에서 검증했습니다. 여러 곡을 한 영상으로 합치기, 임의 레이어 추가·순서 변경, 키프레임, 단어 단위 노래방 강조, 유튜브 업로드는 지원하지 않습니다.
+현재는 **MVP**이며, macOS 직접 실행과 Docker의 Linux ARM64 환경에서 검증했습니다. 여러 곡을 한 영상으로 합치기, 임의 레이어 추가·순서 변경, 키프레임, 단어 단위 노래방 강조, 유튜브 업로드는 지원하지 않습니다.
 
 ## 빠른 시작
 
-### 준비물
+### 방법 1: Docker로 실행
+
+**Docker Desktop 또는 Docker Engine + Compose**가 설치되어 있으면 Node.js·FFmpeg·Chromium을 따로 설치하지 않아도 됩니다. Docker를 실행한 뒤 저장소를 내려받아 실행하세요. Git이 없다면 GitHub의 **Code → Download ZIP**으로 내려받고 압축을 푼 폴더에서 같은 Compose 명령을 실행할 수 있습니다.
+
+```sh
+git clone https://github.com/minyongP/lyric-room.git
+cd lyric-room
+docker compose up -d --build
+```
+
+**[http://127.0.0.1:4173](http://127.0.0.1:4173)**을 여세요. 첫 실행은 이미지와 Chromium을 다운로드하고 빌드하므로 시간이 걸립니다. 이후에는 `docker compose up -d`로 실행합니다.
+
+```sh
+docker compose logs -f     # 실행 로그 확인 (Ctrl+C로 로그 보기 종료)
+docker compose down        # 앱 종료, 저장 데이터는 유지
+```
+
+최신 코드로 업데이트할 때:
+
+```sh
+git pull
+docker compose up -d --build
+```
+
+기존 로컬 서버가 4173 포트를 사용한다면 종료하거나 프로젝트 폴더의 `.env`에 `LYRIC_ROOM_PORT=4180`을 적고 실행하세요. 이 경우 접속 주소는 `http://127.0.0.1:4180`입니다. 포트를 바꿀 때는 Compose 설정의 포트 매핑을 직접 수정하지 말고 이 변수를 사용하세요.
+
+Docker 프로젝트는 전용 영구 볼륨에 저장됩니다. 기존 직접 실행의 `.local-data/`와는 별도이며, 백업·이전 방법은 [Docker 데이터 관리](#docker-데이터-관리)를 참고하세요.
+
+### 방법 2: 직접 설치해서 실행
+
+개발하거나 Docker 없이 실행하려면 다음이 필요합니다.
 
 - Git
 - Node.js **22.12 이상**과 npm
 - **FFmpeg와 ffprobe** — 터미널에서 실행할 수 있도록 PATH에 등록되어 있어야 합니다. FFmpeg에는 `libx264`와 AAC 인코더가 필요합니다.
-- Playwright Chromium — 아래 설치 명령으로 준비합니다.
+- Playwright Chromium — 아래 명령으로 설치합니다.
 
-macOS에서 Homebrew를 사용한다면 FFmpeg를 다음과 같이 설치할 수 있습니다.
+macOS에서 Homebrew를 사용한다면:
 
 ```sh
 brew install ffmpeg
 ```
-
-### 설치 및 실행
 
 ```sh
 git clone https://github.com/minyongP/lyric-room.git
@@ -48,9 +76,9 @@ npx playwright install chromium
 npm run dev
 ```
 
-브라우저에서 **[http://127.0.0.1:4173](http://127.0.0.1:4173)**을 여세요. 앱을 사용하는 동안 터미널의 서버를 실행해 두고, 종료할 때는 `Ctrl+C`를 누릅니다. 서버는 이 컴퓨터에서만 접속할 수 있습니다.
+브라우저에서 **[http://127.0.0.1:4173](http://127.0.0.1:4173)**을 여세요. 앱을 사용하는 동안 서버를 실행해 두고, 종료할 때는 `Ctrl+C`를 누릅니다.
 
-처음 설치할 때는 패키지와 Chromium을 다운로드하기 위한 인터넷 연결이 필요합니다. 폰트는 패키지에 포함됩니다.
+두 실행 방식 모두 기본 설정에서는 이 컴퓨터에서만 접속할 수 있습니다. 처음 설치할 때는 패키지와 Chromium 다운로드를 위한 인터넷 연결이 필요합니다. 폰트는 패키지에 포함됩니다.
 
 <details>
 <summary>빌드해서 실행하거나 포트·저장 경로 바꾸기</summary>
@@ -146,7 +174,7 @@ Lyric Room 자체에 AI 모델이나 자동 전사·정렬 기능이 내장된 �
 
 ## 자동 저장과 백업
 
-선택한 미디어는 프로젝트 폴더로 복사되며 원본 파일은 변경하지 않습니다. 기본 저장 위치는 실행 디렉터리의 `.local-data/`입니다.
+선택한 미디어는 프로젝트 폴더로 복사되며 원본 파일은 변경하지 않습니다. 직접 실행의 기본 저장 위치는 실행 디렉터리의 `.local-data/`이며, Docker에서는 같은 구조를 `/data` 볼륨에 저장합니다.
 
 ```text
 .local-data/
@@ -164,12 +192,36 @@ Lyric Room 자체에 AI 모델이나 자동 전사·정렬 기능이 내장된 �
 
 사용자 미디어, 로컬 프로젝트, 출력 영상은 Git 추적에서 제외됩니다. 단일 프로젝트 패키지의 가져오기·내보내기는 아직 지원하지 않습니다.
 
+### Docker 데이터 관리
+
+Compose의 `lyric-room-data` 볼륨은 컨테이너를 재생성하거나 `docker compose down`을 실행해도 유지됩니다. **`docker compose down -v`는 저장 데이터까지 삭제하므로 사용하지 마세요.**
+
+편집·출력을 마친 뒤 컨테이너를 멈추고 백업할 수 있습니다. 다음 명령은 프로젝트 폴더에 `lyric-room-backup/`을 만듭니다.
+
+```sh
+docker compose stop
+docker compose cp lyric-room:/data ./lyric-room-backup
+docker compose start
+```
+
+기존 직접 실행의 프로젝트를 Docker로 이전하려면, 로컬 서버를 종료하고 **비어 있는 새 Docker 볼륨**에 데이터를 복사하세요. 기존 Docker 프로젝트가 있다면 먼저 백업하세요.
+
+```sh
+docker compose create
+docker compose cp ./.local-data/. lyric-room:/data/
+docker compose run --rm --no-deps --user root lyric-room chown -R node:node /data
+docker compose up -d
+```
+
+백업을 새 볼륨에 복원할 때는 위 복사 명령의 `./.local-data/.`를 `./lyric-room-backup/.`로 바꿉니다. 데이터는 실행한 Compose 프로젝트에 연결되므로 폴더 이름이나 `-p` 프로젝트 이름을 바꾸면 별도 볼륨이 사용될 수 있습니다.
+
 ## 문제 해결
 
 | 증상 | 확인할 내용 |
 | --- | --- |
 | 영상 내보내기를 사용할 수 없음 | `ffmpeg -version`, `ffprobe -version` 실행 여부를 확인하고 `npx playwright install chromium`으로 Chromium을 설치하세요. |
-| 서버가 포트 충돌로 시작되지 않음 | 다른 프로그램의 4173 포트 사용 여부를 확인하거나 `PORT`를 변경하세요. |
+| 서버가 포트 충돌로 시작되지 않음 | 직접 실행은 `PORT`, Docker는 `.env`의 `LYRIC_ROOM_PORT`를 변경하세요. |
+| Docker 데몬에 연결할 수 없음 | Docker Desktop 또는 Docker Engine이 실행 중인지 확인하세요. |
 | 자동 저장이 보류됨 | 안내된 행의 가사 시작·종료 시간과 필수 입력값을 수정하세요. |
 | 자동 저장이 실패함 | 로컬 서버가 실행 중인지 확인하고 **다시 저장**을 누르세요. |
 | 배경 MP4를 열 수 없음 | 영상 코덱이 H.264인지 확인하세요. 모든 MP4 코덱을 지원하지는 않습니다. |
@@ -205,7 +257,7 @@ npm run build          # TypeScript 검사와 프로덕션 빌드
 npm run verify:export -- /path/to/video.mp4 180
 ```
 
-검증 환경과 범위는 [검증 기록](docs/verification.md)을 참고하세요. macOS/Chromium 이외 환경은 별도 검증하지 않았습니다.
+검증 환경과 범위는 [검증 기록](docs/verification.md)을 참고하세요. macOS 직접 실행과 Docker Desktop의 Linux ARM64 컨테이너를 검증했습니다. Windows 및 Linux AMD64는 별도 검증하지 않았습니다.
 
 버그 제보와 개선 제안은 [GitHub Issues](https://github.com/minyongP/lyric-room/issues), 코드 변경은 Pull Request로 보내주세요. 버그 제보에는 운영체제, Node.js·FFmpeg 버전, 재현 순서와 오류 메시지를 포함하면 도움이 됩니다. 코드 변경 시 관련 테스트와 빌드를 확인해 주세요.
 

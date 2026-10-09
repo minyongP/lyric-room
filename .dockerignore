@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+.local-data
+.superpowers
+test-results
+playwright-report
+.DS_Store
+.env
+.env.*
+*.log
+lyric-room-backup

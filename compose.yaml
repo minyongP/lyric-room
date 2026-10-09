@@ -1,0 +1,16 @@
+services:
+  lyric-room:
+    build: .
+    init: true
+    ports:
+      - "127.0.0.1:${LYRIC_ROOM_PORT:-4173}:${LYRIC_ROOM_PORT:-4173}"
+    environment:
+      PORT: ${LYRIC_ROOM_PORT:-4173}
+    volumes:
+      - lyric-room-data:/data
+    shm_size: 1gb
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  lyric-room-data:

@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import express from "express";
 import { createApp } from "./routes";
 const port = Number(process.env.PORT || 4173),
+  host = process.env.HOST || "127.0.0.1",
   origin = `http://127.0.0.1:${port}`,
   root = resolve(process.env.DATA_DIR || ".local-data");
 const { app, jobs } = await createApp(root, origin);
@@ -20,7 +21,7 @@ if (production) {
   });
   app.use(vite.middlewares);
 }
-const server = app.listen(port, "127.0.0.1", () =>
+const server = app.listen(port, host, () =>
   console.log(`Lyric Room: ${origin}`),
 );
 for (const sig of ["SIGINT", "SIGTERM"] as const)

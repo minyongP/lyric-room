@@ -29,6 +29,22 @@
 - 390px 화면의 가로 넘침 없음
 - TypeScript 검사와 Vite 프로덕션 빌드, 빌드된 페이지로 MP4 출력
 
+## Docker 추가 검증
+
+macOS의 Docker Desktop에서 Linux ARM64 이미지를 빌드하고 별도 Compose 프로젝트·4186 포트로 확인했습니다. 기존 로컬 프로젝트 데이터는 사용하지 않았습니다.
+
+- `docker compose config`: 기본 및 사용자 지정 포트, localhost 바인딩, 영구 볼륨, init, 1GB 공유 메모리 설정 확인
+- Node 24 / Debian Bookworm 기반 이미지 빌드 및 헬스체크 통과
+- 컨테이너의 비루트 사용자 실행, 이미지에서 `.local-data`·`.git` 제외 확인
+- 브라우저에서 MP3 업로드, 메타데이터 자동 저장, 새로고침 후 복원
+- 외부 Origin 요청에 403 응답
+- 실제 3초 음원 + 반복 MP4 배경 출력: 1920×1080, 30fps, H.264 + AAC (컨테이너 출력 길이 3.033초)
+- 컨테이너 종료·삭제·재생성 후 두 테스트 프로젝트 보존
+- 중지된 컨테이너에서 데이터 폴더 백업 확인
+- 단위·통합 테스트 34개, TypeScript 및 Vite 빌드 재통과
+
+Compose 설정은 [Playwright Docker 안내](https://playwright.dev/docs/docker)를 참고했습니다. Windows와 Linux AMD64의 별도 실행 검증은 하지 않았습니다.
+
 ## 실제 영상 출력
 
 직접 생성한 테스트 음원·배경만 사용했습니다. 테스트 미디어는 Git에 포함하지 않습니다.
@@ -64,7 +80,7 @@ APP_URL=http://127.0.0.1:4173 npx tsx scripts/compare-frames.ts
 
 ## 남아 있는 범위
 
-- macOS/Chromium 이외 환경의 별도 검증은 하지 않았습니다.
+- macOS 직접 실행과 Docker Desktop의 Linux ARM64 컨테이너를 검증했습니다. Windows와 Linux AMD64는 별도 검증하지 않았습니다.
 - AI 가사 자동 생성/정렬은 포함하지 않으며 외부 AI가 만든 JSON을 검증해 가져옵니다.
 - 강제 종료한 출력의 이어 만들기는 지원하지 않습니다. 다시 출력해야 하며 완료 파일은 보존됩니다.
 - 프로젝트 이동은 `.local-data` 폴더 백업 방식입니다. 단일 프로젝트 패키지 가져오기/내보내기는 후속 범위입니다.
