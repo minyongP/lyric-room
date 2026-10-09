@@ -73,10 +73,13 @@ export function analyzePcm(samples: Float32Array, sampleRate: number) {
   return a.finish();
 }
 export function spectrumAt(data: Spectrum, t: number) {
-  return (
-    data.frames[
-      Math.max(0, Math.min(data.frames.length - 1, Math.floor(t * 30)))
-    ] || Array(32).fill(0)
-  );
+  if (!data.frames.length) return Array(data.bands).fill(0);
+  const position = Math.max(0, Math.min(data.frames.length - 1, t * data.fps));
+  const index = Math.floor(position),
+    fraction = position - index;
+  const left = data.frames[index],
+    right = data.frames[Math.min(index + 1, data.frames.length - 1)];
+  return left.map((value, i) => value + (right[i] - value) * fraction);
 }
+
 export const emptySpectrum: Spectrum = { fps: 30, bands: 32, frames: [] };

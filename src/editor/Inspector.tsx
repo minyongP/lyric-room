@@ -54,7 +54,9 @@ export function Inspector({
     <label className="field" key={key}>
       <span>
         {label}
-        <output>{Math.round(Number(s[key]) * 100) / 100}</output>
+        <output>
+          {Math.round(Number(s[key] ?? defaultStyle[key]) * 100) / 100}
+        </output>
       </span>
       <input
         aria-label={label}
@@ -62,7 +64,7 @@ export function Inspector({
         min={min}
         max={max}
         step={step}
-        value={Number(s[key])}
+        value={Number(s[key] ?? defaultStyle[key])}
         onChange={(e) => style(key, Number(e.target.value) as never)}
       />
     </label>
@@ -418,6 +420,7 @@ export function Inspector({
             {color("visualizerColor", "시각 효과 색상")}
             {slider("visualizerOpacity", "불투명도", 0, 1, 0.05)}
             {slider("visualizerGain", "반응 강도", 0.2, 3, 0.1)}
+            {slider("visualizerGlow", "빛 번짐", 0, 1, 0.05)}
             <p className="hint">
               현재 음원의 주파수 분석 결과를 사용합니다. 미리보기와 출력
               영상에서 동일하게 반응합니다.

@@ -1,7 +1,8 @@
+import { drawVisualizer } from "./visualizer";
 import type { Box, Project } from "../shared/project";
 import { formatTime } from "../shared/project";
 import { cueWindow } from "../shared/lyrics";
-import { spectrumAt, type Spectrum } from "../audio/spectrum";
+import { type Spectrum } from "../audio/spectrum";
 import { layoutCue } from "./layout";
 import type { SceneMedia } from "./media";
 export const W = 1920,
@@ -234,43 +235,6 @@ export function drawScene(
     ctx.fillText(formatTime(p.duration), x + w + 15, y);
   }
   ctx.restore();
-  if (s.showVisualizer) {
-    ctx.save();
-    const box = s.visualizerBox,
-      values = spectrumAt(spectrum, t);
-    ctx.fillStyle = s.visualizerColor;
-    ctx.strokeStyle = s.visualizerColor;
-    ctx.globalAlpha = s.visualizerOpacity;
-    if (s.visualizerType === "bars") {
-      const bw = box.w / values.length;
-      values.forEach((v, i) => {
-        const h = Math.max(2, Math.min(1, v * s.visualizerGain) * box.h);
-        round(
-          ctx,
-          {
-            x: box.x + i * bw + 2,
-            y: box.y + box.h - h,
-            w: Math.max(2, bw - 5),
-            h,
-          },
-          3,
-        );
-        ctx.fill();
-      });
-    } else {
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      values.forEach((v, i) => {
-        const x = box.x + (i * box.w) / (values.length - 1),
-          y =
-            box.y +
-            box.h / 2 +
-            (i % 2 ? 1 : -1) * v * s.visualizerGain * box.h * 0.45;
-        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-      });
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
+  if (s.showVisualizer) drawVisualizer(ctx, s, spectrum, t);
   return { overflowCueIndices };
 }

@@ -1,5 +1,9 @@
 let token = "";
-export async function api<T>(url: string, init: RequestInit = {}): Promise<T> {
+export async function api<T>(
+  url: string,
+  init: RequestInit = {},
+  renewed = false,
+): Promise<T> {
   if (!token) {
     const r = await fetch("/api/session");
     if (!r.ok) throw Error("서버에 연결할 수 없습니다.");
@@ -11,6 +15,14 @@ export async function api<T>(url: string, init: RequestInit = {}): Promise<T> {
     headers.set("Content-Type", "application/json");
   const response = await fetch("/api" + url, { ...init, headers });
   const data = await response.json();
+  if (
+    response.status === 403 &&
+    data.error === "세션이 만료되었습니다. 새로고침해 주세요." &&
+    !renewed
+  ) {
+    token = "";
+    return api<T>(url, init, true);
+  }
   if (!response.ok) throw Error(data.error || "요청에 실패했습니다.");
   return data;
 }
