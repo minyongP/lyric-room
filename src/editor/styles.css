@@ -964,3 +964,25 @@ p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.save-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #9d9da8;
+  white-space: nowrap;
+}
+.save-status.saving,
+.save-status.waiting {
+  color: #d8d8e0;
+}
+.save-status.error,
+.save-status.blocked {
+  color: #efc399;
+}
+@media (max-width: 1000px) {
+  .save-status {
+    font-size: 10px;
+  }
+  .document-name {
+    max-width: 80px;
+  }
+}

@@ -122,11 +122,17 @@ export default function App() {
     audio.current?.pause();
     setPlaying(false);
   }
-  function guard(action: () => void) {
+  const switchAttempt = useRef(0);
+  async function guard(action: () => void) {
+    const attempt = ++switchAttempt.current;
     stop();
     setMenu(false);
-    if (state.dirty) setPending(() => action);
-    else action();
+    try {
+      if (state.dirty) await state.save();
+      if (attempt === switchAttempt.current) action();
+    } catch {
+      if (attempt === switchAttempt.current) setPending(() => action);
+    }
   }
   async function save() {
     try {
@@ -340,6 +346,24 @@ export default function App() {
           {p ? p.title : "새 프로젝트"}
           {state.dirty ? " · 수정됨" : ""}
         </span>
+        {p && (
+          <span
+            className={`save-status ${state.saveStatus}`}
+            role="status"
+            data-testid="save-status"
+            title={state.saveDetail || "편집을 멈추면 로컬에 자동 저장됩니다."}
+          >
+            {
+              {
+                saved: "자동 저장됨",
+                waiting: "저장 대기 중",
+                saving: "저장 중…",
+                error: "자동 저장 실패",
+                blocked: "자동 저장 보류",
+              }[state.saveStatus]
+            }
+          </span>
+        )}
         <div className="header-actions">
           <button disabled={!p} onClick={() => setPlayMode(!playMode)}>
             <Maximize size={15} />
@@ -392,6 +416,22 @@ export default function App() {
           </button>
         </div>
       )}
+      {p &&
+        (state.saveStatus === "error" || state.saveStatus === "blocked") && (
+          <div className="banner error" role="alert">
+            <span>
+              {state.saveStatus === "blocked"
+                ? "입력을 수정하면 자동 저장됩니다."
+                : "저장하지 못했습니다. 서버 연결을 확인하고 다시 시도해 주세요."}{" "}
+              {state.saveDetail}
+            </span>
+            {state.saveStatus === "error" && (
+              <button onClick={() => void save().catch(() => {})}>
+                다시 저장
+              </button>
+            )}
+          </div>
+        )}
       {busy && (
         <div className="busy-bar" role="status">
           파일 처리 중…
@@ -632,7 +672,10 @@ export default function App() {
             aria-label="변경 내용 저장"
           >
             <h2>변경 내용을 저장할까요?</h2>
-            <p>다른 음악을 열기 전에 현재 편집 내용을 저장할 수 있어요.</p>
+            <p>
+              자동 저장을 완료하지 못했습니다. 현재 편집 내용을 수정하거나
+              저장을 다시 시도할 수 있어요.
+            </p>
             <div className="actions">
               <button onClick={() => setPending(null)}>취소</button>
               <button
