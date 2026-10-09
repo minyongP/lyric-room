@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { Project, Style, Part, Box } from "../shared/project";
+import { templateStyle } from "../shared/templates";
 import { defaultStyle } from "../shared/project";
 import { parseLyrics, type LyricCue } from "../shared/lyrics";
 import { clampBox } from "../scene/layout";
@@ -404,14 +405,32 @@ export function Inspector({
             {toggle("showArtist", "가수 이름 표시")}
             {toggle("showControls", "플레이 화면 재생 버튼")}
             {toggle("showProgress", "재생 진행 바")}
-            {slider("coverSize", "커버 너비", 60, 230)}
-            {slider("coverRadius", "커버 모서리", 0, 100)}
+            {p.templateId === "vinyl" ? (
+              <>
+                {slider("discSize", "원형 커버 크기", 160, 600)}
+                {slider(
+                  "rotationSeconds",
+                  "한 바퀴 회전 시간 (초, 0은 정지)",
+                  0,
+                  120,
+                )}
+                <p className="hint">
+                  커버는 시각 효과 가로선 중앙에 배치됩니다. 시각 효과의 위치를
+                  바꾸면 함께 이동합니다.
+                </p>
+              </>
+            ) : (
+              <>
+                {slider("coverSize", "커버 너비", 60, 230)}
+                {slider("coverRadius", "커버 모서리", 0, 100)}
+              </>
+            )}
             {slider("infoSize", "곡 이름 크기", 24, 64)}
             {color("playerColor", "플레이어 색상")}
             {slider("playerOpacity", "플레이어 농도", 0, 1, 0.05)}
             {slider("playerRadius", "플레이어 모서리", 0, 80)}
             <p className="hint">
-              조작 버튼은 감상 화면에서만 보이며 내보낸 영상에는 포함되지
+              조작 버튼은 미리보기와 감상 화면에 보이며 내보낸 영상에는 포함되지
               않습니다.
             </p>
           </>
@@ -464,7 +483,9 @@ export function Inspector({
                 style(
                   `${part}Box` as keyof Style,
                   structuredClone(
-                    defaultStyle[`${part}Box` as "lyricsBox"],
+                    templateStyle(p.templateId ?? "classic")[
+                      `${part}Box` as "lyricsBox"
+                    ],
                   ) as never,
                 )
               }

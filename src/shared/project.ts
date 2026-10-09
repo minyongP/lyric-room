@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { templateIds } from "./template-id";
 import { cueSchema } from "./lyrics";
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const num = (min: number, max: number) => z.number().min(min).max(max);
@@ -41,6 +42,8 @@ export const styleSchema = z.object({
   showProgress: z.boolean(),
   showVisualizer: z.boolean(),
   coverSize: num(60, 230),
+  discSize: num(160, 600).default(370),
+  rotationSeconds: num(0, 120).default(24),
   coverRadius: num(0, 100),
   infoSize: num(24, 64),
   playerColor: color,
@@ -60,6 +63,7 @@ export type Box = z.infer<typeof boxSchema>;
 export type Part = "background" | "lyrics" | "player" | "visualizer";
 export const projectSchema = z.object({
   schemaVersion: z.literal(1),
+  templateId: z.enum(templateIds).default("classic"),
   id: z.uuid(),
   title: z.string().max(200),
   artist: z.string().max(200),
@@ -104,6 +108,8 @@ export const defaultStyle: Style = {
   showProgress: true,
   showVisualizer: true,
   coverSize: 170,
+  discSize: 370,
+  rotationSeconds: 24,
   coverRadius: 0,
   infoSize: 36,
   playerColor: "#eeeeee",
@@ -121,6 +127,7 @@ export const defaultStyle: Style = {
 export function newProject(id: string): Project {
   return {
     schemaVersion: 1,
+    templateId: "classic",
     id,
     title: "제목 없는 음악",
     artist: "",

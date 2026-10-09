@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { api, upload } from "./api";
 import { projectSchema, type Project } from "../shared/project";
+import { applyTemplate } from "../shared/templates";
+import type { TemplateId } from "../shared/template-id";
 import { parseLyrics } from "../shared/lyrics";
 function draftProblem(p: Project | null) {
   if (!p) return "";
@@ -61,12 +63,13 @@ export function useProject() {
       if (ticket === generation.current) setBusy(false);
     }
   }
-  async function importAudio(file: File) {
+  async function importAudio(file: File, templateId: TemplateId = "classic") {
     const ticket = ++generation.current;
     setBusy(true);
     setError("");
     try {
       let p = await api<Project>("/projects", { method: "POST" });
+      p = applyTemplate(p, templateId);
       const asset = await upload(p.id, file, "audio");
       p = {
         ...p,

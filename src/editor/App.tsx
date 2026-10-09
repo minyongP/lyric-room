@@ -23,9 +23,14 @@ import { parseLyrics } from "../shared/lyrics";
 import { assetUrl, loadFonts } from "../scene/media";
 import { findOverflowCues, playerForeground } from "../scene/draw";
 import { emptySpectrum, type Spectrum } from "../audio/spectrum";
+import { TemplatePicker, TemplateDialog } from "./TemplatePicker";
+import { applyTemplate } from "../shared/templates";
+import type { TemplateId } from "../shared/template-id";
 export default function App() {
   const state = useProject(),
     p = state.project;
+  const [newTemplate, setNewTemplate] = useState<TemplateId>("classic");
+  const [templateDialog, setTemplateDialog] = useState<TemplateId | null>(null);
   const [part, setPart] = useState<Part>("lyrics"),
     [menu, setMenu] = useState(false),
     [playMode, setPlayMode] = useState(false),
@@ -274,7 +279,7 @@ export default function App() {
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) guard(() => void state.importAudio(f));
+          if (f) guard(() => void state.importAudio(f, newTemplate));
           e.target.value = "";
         }}
       />
@@ -321,6 +326,15 @@ export default function App() {
                 >
                   <Save size={15} />
                   현재 프로젝트 저장
+                </button>
+                <button
+                  disabled={!p}
+                  onClick={() => {
+                    setTemplateDialog(p?.templateId ?? "classic");
+                    setMenu(false);
+                  }}
+                >
+                  템플릿 변경…
                 </button>
                 <small>최근 프로젝트</small>
                 {state.recent.length === 0 ? (
@@ -445,6 +459,7 @@ export default function App() {
           <span className="eyebrow">YOUR MUSIC, YOUR SCENE</span>
           <h1>음악에 나만의 장면을.</h1>
           <p>한 곡을 열고, 가사를 더하고, 당신의 영상으로 만드세요.</p>
+          <TemplatePicker value={newTemplate} onChange={setNewTemplate} />
           <button
             className="primary"
             disabled={busy}
@@ -523,13 +538,20 @@ export default function App() {
                     role="group"
                     aria-label="화면 내 재생 조작"
                     style={{
-                      color: playerForeground(p.style.playerColor),
+                      color:
+                        p.templateId === "vinyl"
+                          ? p.style.textColor
+                          : playerForeground(p.style.playerColor),
                       left:
-                        (p.style.playerBox.x + p.style.playerBox.w * 0.67) /
+                        (p.style.playerBox.x +
+                          p.style.playerBox.w *
+                            (p.templateId === "vinyl" ? 0.5 : 0.67)) /
                           19.2 +
                         "%",
                       top:
-                        (p.style.playerBox.y + p.style.playerBox.h * 0.32) /
+                        (p.style.playerBox.y +
+                          p.style.playerBox.h *
+                            (p.templateId === "vinyl" ? 1.4 : 0.32)) /
                           10.8 +
                         "%",
                     }}
@@ -662,6 +684,19 @@ export default function App() {
             </>
           )}
         </section>
+      )}
+      {templateDialog && p && (
+        <TemplateDialog
+          value={templateDialog}
+          onChange={setTemplateDialog}
+          onClose={() => setTemplateDialog(null)}
+          onApply={() => {
+            const next = applyTemplate(p, templateDialog);
+            state.update({ templateId: next.templateId, style: next.style });
+            setNewTemplate(templateDialog);
+            setTemplateDialog(null);
+          }}
+        />
       )}
       {pending && (
         <div className="modal-backdrop">
