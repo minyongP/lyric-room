@@ -6,4 +6,4 @@
 - Playwright is provided under Apache-2.0 and downloads Chromium separately. Chromium retains its bundled third-party notices.
 - FFmpeg is an external executable supplied by the user; no FFmpeg binary is included. Build options determine its applicable license. This app invokes libx264 and AAC for export.
 
-The app's MIT license does not relicense these components or user media.
+The app's Apache-2.0 license does not relicense these components or user media.

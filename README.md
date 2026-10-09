@@ -16,6 +16,8 @@
 # macOS에서 FFmpeg가 없다면
 brew install ffmpeg
 
+git clone https://github.com/minyongP/lyric-room.git
+cd lyric-room
 npm ci
 npx playwright install chromium
 npm run dev
@@ -99,4 +101,4 @@ npm run verify:export -- /path/to/video.mp4 180
 
 `src/shared` 프로젝트/가사 검증 · `src/scene` 공통 Canvas 렌더러 · `src/audio` FFT 분석 · `src/editor` React 편집기 · `server` 로컬 저장/HTTP · `server/export` Chromium 프레임 생성과 FFmpeg 인코딩.
 
-MIT 라이선스. 폰트와 외부 도구의 고지는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요. 예제 가사는 자체 작성되었으며 사용자 음악은 저장소에 포함되지 않습니다.
+[Apache License 2.0](LICENSE)로 공개합니다. 폰트와 외부 도구의 고지는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요. 예제 가사는 자체 작성되었으며 사용자 음악은 저장소에 포함되지 않습니다.

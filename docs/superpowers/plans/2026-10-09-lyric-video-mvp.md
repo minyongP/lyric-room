@@ -1,5 +1,6 @@
 # 가사 플레이어 · 영상 제작 MVP Implementation Plan
 
+> 공개 라이선스는 2026-10-09 사용자 요청에 따라 Apache-2.0으로 변경했습니다. 아래 MIT 언급은 초기 계획 기록입니다.
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 로컬 MP3와 시간별 가사로 꾸민 음악 화면을 재생하고 1080p MP4로 저장한다.
