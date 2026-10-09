@@ -1,6 +1,186 @@
-import {mkdir,readFile,writeFile,rename,copyFile,readdir,stat,rm} from 'node:fs/promises';import {join,extname} from 'node:path';import {randomUUID} from 'node:crypto';import {projectSchema,newProject,type Project,type Asset} from '../src/shared/project';import {parseLyrics} from '../src/shared/lyrics';import {probeFile} from './probe';
-export class AppError extends Error{constructor(message:string,public status=400){super(message)}}
-export function validId(id:string){if(!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))throw new AppError('올바른 파일 ID가 아닙니다.');return id}
-export function createStore(root:string){const dir=(id:string)=>join(root,'projects',validId(id));const read=async<T>(path:string):Promise<T>=>{try{return JSON.parse(await readFile(path,'utf8'))}catch{throw new AppError('파일을 찾을 수 없습니다.',404)}};async function atomic(path:string,data:unknown){const tmp=path+'.'+randomUUID()+'.tmp';try{await writeFile(tmp,JSON.stringify(data,null,2));await rename(tmp,path)}finally{await rm(tmp,{force:true})}}
-const store={root,async create(){const p=newProject(randomUUID());await mkdir(join(dir(p.id),'assets'),{recursive:true});await atomic(join(dir(p.id),'project.json'),p);return p},async load(id:string){return projectSchema.parse(await read(join(dir(id),'project.json')))},async list(){await mkdir(join(root,'projects'),{recursive:true});const results=await Promise.all((await readdir(join(root,'projects'))).map(async id=>{try{const p=await store.load(id);const info=await stat(join(dir(id),'project.json'));return {id:p.id,title:p.title,artist:p.artist,updated:info.mtimeMs,audio:!!p.audioId}}catch{return null}}));return results.filter((x):x is NonNullable<typeof x>=>!!x&&x.audio).sort((a,b)=>b.updated-a.updated)},async asset(id:string,assetId:string){return read<Asset>(join(dir(id),'assets',validId(assetId)+'.json'))},async resolveAsset(id:string,assetId:string){const meta=await store.asset(id,assetId);return join(dir(id),'assets',validId(assetId)+meta.ext)},async validate(input:unknown){const p=projectSchema.parse(input);await store.load(p.id);const lyrics=parseLyrics({lyrics:p.lyrics},p.duration);if(!lyrics.ok)throw new AppError(lyrics.errors.map(e=>`${e.cue||''}: ${e.message}`).join('\n'));for(const [key,role] of [['audioId','audio'],['coverId','image'],['backgroundId','background']] as const){const id=p[key];if(id){const asset=await store.asset(p.id,id);if(role!=='background'&&asset.kind!==role||role==='background'&&asset.kind==='audio')throw new AppError('파일 종류가 맞지 않습니다.');if(role==='audio'&&Math.abs((asset.duration||0)-p.duration)>.1)throw new AppError('곡 길이가 원본과 일치하지 않습니다.')}}return p},async save(input:Project){const p=await store.validate(input);await atomic(join(dir(p.id),'project.json'),p)},async importAsset(id:string,path:string,name:string,role:string){await store.load(id);if(name.includes('/')||name.includes('\\')||name==='..'||!['audio','background','cover'].includes(role))throw new AppError('파일 이름 또는 종류가 올바르지 않습니다.');const ext=extname(name).toLowerCase();if(role==='audio'?ext!=='.mp3':!['.jpg','.jpeg','.png','.webp',...(role==='background'?['.mp4']:[])].includes(ext))throw new AppError('지원하지 않는 파일 형식입니다.');const probe=await probeFile(path);const stream=probe.streams.find(s=>s.codec_type===(role==='audio'?'audio':'video'));if(!stream)throw new AppError('미디어를 읽을 수 없습니다.');const video=ext==='.mp4';if(role==='audio'&&stream.codec_name!=='mp3'||video&&stream.codec_name!=='h264'||!video&&role!=='audio'&&!['mjpeg','png','webp'].includes(stream.codec_name))throw new AppError('지원하지 않는 미디어 코덱입니다.');if((role==='audio'||video)&&(!(probe.duration>0)||probe.duration>7200))throw new AppError('최대 2시간의 미디어를 지원합니다.');if((stream.width||0)>8192||(stream.height||0)>8192)throw new AppError('최대 8192px 이미지를 지원합니다.');const meta:Asset={id:randomUUID(),kind:role==='audio'?'audio':video?'video':'image',originalName:name,ext,duration:probe.duration,width:stream.width,height:stream.height};await copyFile(path,join(dir(id),'assets',meta.id+ext));await atomic(join(dir(id),'assets',meta.id+'.json'),meta);return meta}};return store}
-export type Store=ReturnType<typeof createStore>;
+import {
+  mkdir,
+  readFile,
+  writeFile,
+  rename,
+  copyFile,
+  readdir,
+  stat,
+  rm,
+} from "node:fs/promises";
+import { join, extname } from "node:path";
+import { randomUUID } from "node:crypto";
+import {
+  projectSchema,
+  newProject,
+  type Project,
+  type Asset,
+} from "../src/shared/project";
+import { parseLyrics } from "../src/shared/lyrics";
+import { probeFile } from "./probe";
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public status = 400,
+  ) {
+    super(message);
+  }
+}
+export function validId(id: string) {
+  if (!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))
+    throw new AppError("올바른 파일 ID가 아닙니다.");
+  return id;
+}
+export function createStore(root: string) {
+  const dir = (id: string) => join(root, "projects", validId(id));
+  const read = async <T>(path: string): Promise<T> => {
+    try {
+      return JSON.parse(await readFile(path, "utf8"));
+    } catch {
+      throw new AppError("파일을 찾을 수 없습니다.", 404);
+    }
+  };
+  async function atomic(path: string, data: unknown) {
+    const tmp = path + "." + randomUUID() + ".tmp";
+    try {
+      await writeFile(tmp, JSON.stringify(data, null, 2));
+      await rename(tmp, path);
+    } finally {
+      await rm(tmp, { force: true });
+    }
+  }
+  const store = {
+    root,
+    async create() {
+      const p = newProject(randomUUID());
+      await mkdir(join(dir(p.id), "assets"), { recursive: true });
+      await atomic(join(dir(p.id), "project.json"), p);
+      return p;
+    },
+    async load(id: string) {
+      return projectSchema.parse(await read(join(dir(id), "project.json")));
+    },
+    async list() {
+      await mkdir(join(root, "projects"), { recursive: true });
+      const results = await Promise.all(
+        (await readdir(join(root, "projects"))).map(async (id) => {
+          try {
+            const p = await store.load(id);
+            const info = await stat(join(dir(id), "project.json"));
+            return {
+              id: p.id,
+              title: p.title,
+              artist: p.artist,
+              updated: info.mtimeMs,
+              audio: !!p.audioId,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      return results
+        .filter((x): x is NonNullable<typeof x> => !!x && x.audio)
+        .sort((a, b) => b.updated - a.updated);
+    },
+    async asset(id: string, assetId: string) {
+      return read<Asset>(join(dir(id), "assets", validId(assetId) + ".json"));
+    },
+    async resolveAsset(id: string, assetId: string) {
+      const meta = await store.asset(id, assetId);
+      return join(dir(id), "assets", validId(assetId) + meta.ext);
+    },
+    async validate(input: unknown) {
+      const p = projectSchema.parse(input);
+      await store.load(p.id);
+      const lyrics = parseLyrics({ lyrics: p.lyrics }, p.duration);
+      if (!lyrics.ok)
+        throw new AppError(
+          lyrics.errors.map((e) => `${e.cue || ""}: ${e.message}`).join("\n"),
+        );
+      for (const [key, role] of [
+        ["audioId", "audio"],
+        ["coverId", "image"],
+        ["backgroundId", "background"],
+      ] as const) {
+        const id = p[key];
+        if (id) {
+          const asset = await store.asset(p.id, id);
+          if (
+            (role !== "background" && asset.kind !== role) ||
+            (role === "background" && asset.kind === "audio")
+          )
+            throw new AppError("파일 종류가 맞지 않습니다.");
+          if (
+            role === "audio" &&
+            Math.abs((asset.duration || 0) - p.duration) > 0.1
+          )
+            throw new AppError("곡 길이가 원본과 일치하지 않습니다.");
+        }
+      }
+      return p;
+    },
+    async save(input: Project) {
+      const p = await store.validate(input);
+      await atomic(join(dir(p.id), "project.json"), p);
+    },
+    async importAsset(id: string, path: string, name: string, role: string) {
+      await store.load(id);
+      if (
+        name.includes("/") ||
+        name.includes("\\") ||
+        name === ".." ||
+        !["audio", "background", "cover"].includes(role)
+      )
+        throw new AppError("파일 이름 또는 종류가 올바르지 않습니다.");
+      const ext = extname(name).toLowerCase();
+      if (
+        role === "audio"
+          ? ext !== ".mp3"
+          : ![
+              ".jpg",
+              ".jpeg",
+              ".png",
+              ".webp",
+              ...(role === "background" ? [".mp4"] : []),
+            ].includes(ext)
+      )
+        throw new AppError("지원하지 않는 파일 형식입니다.");
+      const probe = await probeFile(path);
+      const stream = probe.streams.find(
+        (s) => s.codec_type === (role === "audio" ? "audio" : "video"),
+      );
+      if (!stream) throw new AppError("미디어를 읽을 수 없습니다.");
+      const video = ext === ".mp4";
+      if (
+        (role === "audio" && stream.codec_name !== "mp3") ||
+        (video && stream.codec_name !== "h264") ||
+        (!video &&
+          role !== "audio" &&
+          !["mjpeg", "png", "webp"].includes(stream.codec_name))
+      )
+        throw new AppError("지원하지 않는 미디어 코덱입니다.");
+      if (
+        (role === "audio" || video) &&
+        (!(probe.duration > 0) || probe.duration > 7200)
+      )
+        throw new AppError("최대 2시간의 미디어를 지원합니다.");
+      if ((stream.width || 0) > 8192 || (stream.height || 0) > 8192)
+        throw new AppError("최대 8192px 이미지를 지원합니다.");
+      const meta: Asset = {
+        id: randomUUID(),
+        kind: role === "audio" ? "audio" : video ? "video" : "image",
+        originalName: name,
+        ext,
+        duration: probe.duration,
+        width: stream.width,
+        height: stream.height,
+      };
+      await copyFile(path, join(dir(id), "assets", meta.id + ext));
+      await atomic(join(dir(id), "assets", meta.id + ".json"), meta);
+      return meta;
+    },
+  };
+  return store;
+}
+export type Store = ReturnType<typeof createStore>;

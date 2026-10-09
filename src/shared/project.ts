@@ -1,13 +1,153 @@
-import {z} from 'zod';
-import {cueSchema} from './lyrics';
-const color=z.string().regex(/^#[0-9a-fA-F]{6}$/);const num=(min:number,max:number)=>z.number().min(min).max(max);
-export const boxSchema=z.object({x:num(0,1920),y:num(0,1080),w:num(120,1920),h:num(40,1080)}).refine(b=>b.x+b.w<=1920&&b.y+b.h<=1080,'화면 안에 배치해 주세요.');
-export const styleSchema=z.object({fontSize:num(24,80),textColor:color,panelOpacity:num(0,1),panelColor:color,panelRadius:num(0,80),backgroundBlur:num(0,30),backgroundBrightness:num(0,1.5),backgroundFit:z.enum(['cover','contain']),backgroundStart:num(0,86400),backgroundLoop:z.boolean(),backgroundScale:num(1,3),backgroundX:num(-1,1),backgroundY:num(-1,1),fontFamily:z.enum(['sans','serif']),lineGap:num(0,40),align:z.enum(['left','center','right']),showOriginal:z.boolean(),showPronunciation:z.boolean(),showTranslation:z.boolean(),showLyrics:z.boolean(),showCover:z.boolean(),showTitle:z.boolean(),showArtist:z.boolean(),showControls:z.boolean(),showProgress:z.boolean(),showVisualizer:z.boolean(),coverSize:num(60,230),coverRadius:num(0,100),infoSize:num(24,64),playerColor:color,playerOpacity:num(0,1),playerRadius:num(0,80),visualizerColor:color,visualizerOpacity:num(0,1),visualizerGain:num(.2,3),visualizerType:z.enum(['bars','wave']),lyricsBox:boxSchema,playerBox:boxSchema,visualizerBox:boxSchema});
-export type Style=z.infer<typeof styleSchema>;export type Box=z.infer<typeof boxSchema>;export type Part='background'|'lyrics'|'player'|'visualizer';
-export const projectSchema=z.object({schemaVersion:z.literal(1),id:z.uuid(),title:z.string().max(200),artist:z.string().max(200),duration:num(0,7200),audioId:z.uuid().optional(),backgroundId:z.uuid().optional(),coverId:z.uuid().optional(),lyrics:z.array(cueSchema).max(10000),style:styleSchema,output:z.object({width:z.literal(1920),height:z.literal(1080),fps:z.literal(30)})});
-export type Project=z.infer<typeof projectSchema>;
-export const defaultStyle:Style={fontSize:52,textColor:'#ffffff',panelOpacity:.32,panelColor:'#252528',panelRadius:40,backgroundBlur:8,backgroundBrightness:.75,backgroundFit:'cover',backgroundStart:0,backgroundLoop:true,backgroundScale:1,backgroundX:0,backgroundY:0,fontFamily:'sans',lineGap:10,align:'center',showOriginal:true,showPronunciation:true,showTranslation:true,showLyrics:true,showCover:true,showTitle:true,showArtist:true,showControls:true,showProgress:true,showVisualizer:true,coverSize:170,coverRadius:0,infoSize:36,playerColor:'#eeeeee',playerOpacity:.92,playerRadius:40,visualizerColor:'#ffffff',visualizerOpacity:.7,visualizerGain:1,visualizerType:'bars',lyricsBox:{x:44,y:40,w:1832,h:740},playerBox:{x:44,y:816,w:1832,h:150},visualizerBox:{x:280,y:990,w:1360,h:70}};
-export function newProject(id:string):Project{return {schemaVersion:1,id,title:'제목 없는 음악',artist:'',duration:0,lyrics:[],style:structuredClone(defaultStyle),output:{width:1920,height:1080,fps:30}}}
-export interface Asset{id:string;kind:'audio'|'image'|'video';originalName:string;duration?:number;width?:number;height?:number;ext:string}
-export interface ExportJob{id:string;status:'queued'|'rendering'|'encoding'|'completed'|'failed'|'cancelled';progress:number;error?:string;downloadUrl?:string}
-export const formatTime=(n:number)=>`${Math.floor(n/60).toString().padStart(2,'0')}:${Math.floor(n%60).toString().padStart(2,'0')}`;
+import { z } from "zod";
+import { cueSchema } from "./lyrics";
+const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+const num = (min: number, max: number) => z.number().min(min).max(max);
+export const boxSchema = z
+  .object({
+    x: num(0, 1920),
+    y: num(0, 1080),
+    w: num(120, 1920),
+    h: num(40, 1080),
+  })
+  .refine(
+    (b) => b.x + b.w <= 1920 && b.y + b.h <= 1080,
+    "화면 안에 배치해 주세요.",
+  );
+export const styleSchema = z.object({
+  fontSize: num(24, 80),
+  textColor: color,
+  panelOpacity: num(0, 1),
+  panelColor: color,
+  panelRadius: num(0, 80),
+  backgroundBlur: num(0, 30),
+  backgroundBrightness: num(0, 1.5),
+  backgroundFit: z.enum(["cover", "contain"]),
+  backgroundStart: num(0, 86400),
+  backgroundLoop: z.boolean(),
+  backgroundScale: num(1, 3),
+  backgroundX: num(-1, 1),
+  backgroundY: num(-1, 1),
+  fontFamily: z.enum(["sans", "serif"]),
+  lineGap: num(0, 40),
+  align: z.enum(["left", "center", "right"]),
+  showOriginal: z.boolean(),
+  showPronunciation: z.boolean(),
+  showTranslation: z.boolean(),
+  showLyrics: z.boolean(),
+  showCover: z.boolean(),
+  showTitle: z.boolean(),
+  showArtist: z.boolean(),
+  showControls: z.boolean(),
+  showProgress: z.boolean(),
+  showVisualizer: z.boolean(),
+  coverSize: num(60, 230),
+  coverRadius: num(0, 100),
+  infoSize: num(24, 64),
+  playerColor: color,
+  playerOpacity: num(0, 1),
+  playerRadius: num(0, 80),
+  visualizerColor: color,
+  visualizerOpacity: num(0, 1),
+  visualizerGain: num(0.2, 3),
+  visualizerType: z.enum(["bars", "wave"]),
+  lyricsBox: boxSchema,
+  playerBox: boxSchema,
+  visualizerBox: boxSchema,
+});
+export type Style = z.infer<typeof styleSchema>;
+export type Box = z.infer<typeof boxSchema>;
+export type Part = "background" | "lyrics" | "player" | "visualizer";
+export const projectSchema = z.object({
+  schemaVersion: z.literal(1),
+  id: z.uuid(),
+  title: z.string().max(200),
+  artist: z.string().max(200),
+  duration: num(0, 7200),
+  audioId: z.uuid().optional(),
+  backgroundId: z.uuid().optional(),
+  coverId: z.uuid().optional(),
+  lyrics: z.array(cueSchema).max(10000),
+  style: styleSchema,
+  output: z.object({
+    width: z.literal(1920),
+    height: z.literal(1080),
+    fps: z.literal(30),
+  }),
+});
+export type Project = z.infer<typeof projectSchema>;
+export const defaultStyle: Style = {
+  fontSize: 52,
+  textColor: "#ffffff",
+  panelOpacity: 0.32,
+  panelColor: "#252528",
+  panelRadius: 40,
+  backgroundBlur: 8,
+  backgroundBrightness: 0.75,
+  backgroundFit: "cover",
+  backgroundStart: 0,
+  backgroundLoop: true,
+  backgroundScale: 1,
+  backgroundX: 0,
+  backgroundY: 0,
+  fontFamily: "sans",
+  lineGap: 10,
+  align: "center",
+  showOriginal: true,
+  showPronunciation: true,
+  showTranslation: true,
+  showLyrics: true,
+  showCover: true,
+  showTitle: true,
+  showArtist: true,
+  showControls: true,
+  showProgress: true,
+  showVisualizer: true,
+  coverSize: 170,
+  coverRadius: 0,
+  infoSize: 36,
+  playerColor: "#eeeeee",
+  playerOpacity: 0.92,
+  playerRadius: 40,
+  visualizerColor: "#ffffff",
+  visualizerOpacity: 0.7,
+  visualizerGain: 1,
+  visualizerType: "bars",
+  lyricsBox: { x: 44, y: 40, w: 1832, h: 740 },
+  playerBox: { x: 44, y: 816, w: 1832, h: 150 },
+  visualizerBox: { x: 280, y: 990, w: 1360, h: 70 },
+};
+export function newProject(id: string): Project {
+  return {
+    schemaVersion: 1,
+    id,
+    title: "제목 없는 음악",
+    artist: "",
+    duration: 0,
+    lyrics: [],
+    style: structuredClone(defaultStyle),
+    output: { width: 1920, height: 1080, fps: 30 },
+  };
+}
+export interface Asset {
+  id: string;
+  kind: "audio" | "image" | "video";
+  originalName: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  ext: string;
+}
+export interface ExportJob {
+  id: string;
+  status:
+    "queued" | "rendering" | "encoding" | "completed" | "failed" | "cancelled";
+  progress: number;
+  error?: string;
+  downloadUrl?: string;
+}
+export const formatTime = (n: number) =>
+  `${Math.floor(n / 60)
+    .toString()
+    .padStart(2, "0")}:${Math.floor(n % 60)
+    .toString()
+    .padStart(2, "0")}`;

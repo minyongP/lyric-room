@@ -1,9 +1,82 @@
-import FFT from 'fft.js';
-export interface Spectrum{fps:30;bands:32;frames:number[][]}
-const N=2048;
-export function createSpectrumAnalyzer(sampleRate:number){const fft=new FFT(N),output=fft.createComplexArray(),window=Float64Array.from({length:N},(_,i)=>.5*(1-Math.cos(2*Math.PI*i/(N-1))));let buffer:number[]=[],cursor=0,total=0,frames:number[][]=[],previous=Array(32).fill(0);const hop=Math.round(sampleRate/30);
-function frame(data:number[]){const input=new Float64Array(N);for(let i=0;i<N;i++)input[i]=(data[i]||0)*window[i];fft.realTransform(output,input);const bands=Array.from({length:32},(_,b)=>{const from=Math.max(1,Math.floor(40*Math.pow(sampleRate/80,b/32)*N/sampleRate)),to=Math.min(N/2,Math.ceil(40*Math.pow(sampleRate/80,(b+1)/32)*N/sampleRate));let max=0;for(let k=from;k<to;k++)max=Math.max(max,Math.hypot(output[2*k],output[2*k+1])/N);return max<.00001?0:Math.max(0,Math.min(1,(20*Math.log10(max)+70)/60))});previous=bands.map((v,i)=>v*.65+previous[i]*.35);frames.push(previous.map(x=>Math.round(x*10000)/10000));}
-return {push(chunk:Float32Array){total+=chunk.length;buffer.push(...chunk.subarray(0,0));for(let i=0;i<chunk.length;i++)buffer.push(chunk[i]);while(buffer.length-cursor>=N){frame(buffer.slice(cursor,cursor+N));cursor+=hop}if(cursor>0){buffer=buffer.slice(cursor);cursor=0}},finish():Spectrum{const count=Math.ceil(total/hop);while(frames.length<count){frame(buffer.slice(cursor,cursor+N));cursor+=hop}return {fps:30,bands:32,frames}}};}
-export function analyzePcm(samples:Float32Array,sampleRate:number){const a=createSpectrumAnalyzer(sampleRate);a.push(samples);return a.finish()}
-export function spectrumAt(data:Spectrum,t:number){return data.frames[Math.max(0,Math.min(data.frames.length-1,Math.floor(t*30)))]||Array(32).fill(0)}
-export const emptySpectrum:Spectrum={fps:30,bands:32,frames:[]};
+import FFT from "fft.js";
+export interface Spectrum {
+  fps: 30;
+  bands: 32;
+  frames: number[][];
+}
+const N = 2048;
+export function createSpectrumAnalyzer(sampleRate: number) {
+  const fft = new FFT(N),
+    output = fft.createComplexArray(),
+    window = Float64Array.from(
+      { length: N },
+      (_, i) => 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1))),
+    );
+  let buffer: number[] = [],
+    cursor = 0,
+    total = 0,
+    frames: number[][] = [],
+    previous = Array(32).fill(0);
+  const hop = Math.round(sampleRate / 30);
+  function frame(data: number[]) {
+    const input = new Float64Array(N);
+    for (let i = 0; i < N; i++) input[i] = (data[i] || 0) * window[i];
+    fft.realTransform(output, input);
+    const bands = Array.from({ length: 32 }, (_, b) => {
+      const from = Math.max(
+          1,
+          Math.floor((40 * Math.pow(sampleRate / 80, b / 32) * N) / sampleRate),
+        ),
+        to = Math.min(
+          N / 2,
+          Math.ceil(
+            (40 * Math.pow(sampleRate / 80, (b + 1) / 32) * N) / sampleRate,
+          ),
+        );
+      let max = 0;
+      for (let k = from; k < to; k++)
+        max = Math.max(max, Math.hypot(output[2 * k], output[2 * k + 1]) / N);
+      return max < 0.00001
+        ? 0
+        : Math.max(0, Math.min(1, (20 * Math.log10(max) + 70) / 60));
+    });
+    previous = bands.map((v, i) => v * 0.65 + previous[i] * 0.35);
+    frames.push(previous.map((x) => Math.round(x * 10000) / 10000));
+  }
+  return {
+    push(chunk: Float32Array) {
+      total += chunk.length;
+      buffer.push(...chunk.subarray(0, 0));
+      for (let i = 0; i < chunk.length; i++) buffer.push(chunk[i]);
+      while (buffer.length - cursor >= N) {
+        frame(buffer.slice(cursor, cursor + N));
+        cursor += hop;
+      }
+      if (cursor > 0) {
+        buffer = buffer.slice(cursor);
+        cursor = 0;
+      }
+    },
+    finish(): Spectrum {
+      const count = Math.ceil(total / hop);
+      while (frames.length < count) {
+        frame(buffer.slice(cursor, cursor + N));
+        cursor += hop;
+      }
+      return { fps: 30, bands: 32, frames };
+    },
+  };
+}
+export function analyzePcm(samples: Float32Array, sampleRate: number) {
+  const a = createSpectrumAnalyzer(sampleRate);
+  a.push(samples);
+  return a.finish();
+}
+export function spectrumAt(data: Spectrum, t: number) {
+  return (
+    data.frames[
+      Math.max(0, Math.min(data.frames.length - 1, Math.floor(t * 30)))
+    ] || Array(32).fill(0)
+  );
+}
+export const emptySpectrum: Spectrum = { fps: 30, bands: 32, frames: [] };

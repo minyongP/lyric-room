@@ -1,2 +1,63 @@
-import {spawn} from 'node:child_process';import {readFile,writeFile} from 'node:fs/promises';import {createSpectrumAnalyzer,type Spectrum} from '../src/audio/spectrum';import type {Store} from './store';
-export function createAnalysis(store:Store){const pending=new Map<string,Promise<Spectrum>>();return async(id:string,audioId:string)=>{const key=id+audioId;if(pending.has(key))return pending.get(key)!;const work=(async()=>{const path=await store.resolveAsset(id,audioId);try{return JSON.parse(await readFile(path+'.spectrum.json','utf8')) as Spectrum}catch{}const analyzer=createSpectrumAnalyzer(24000);await new Promise<void>((resolve,reject)=>{const p=spawn('ffmpeg',['-v','error','-i',path,'-vn','-ac','1','-ar','24000','-f','f32le','pipe:1']),chunks:Buffer[]=[];let leftover=Buffer.alloc(0),error='';p.stdout.on('data',(chunk:Buffer)=>{const b=Buffer.concat([leftover,chunk]),length=b.length-b.length%4;const samples=new Float32Array(length/4);for(let i=0;i<samples.length;i++)samples[i]=b.readFloatLE(i*4);analyzer.push(samples);leftover=b.subarray(length)});p.stderr.on('data',d=>error=(error+d).slice(-2000));p.on('error',reject);p.on('close',code=>code===0?resolve():reject(Error(error)));setTimeout(()=>p.kill(),120000).unref()});const data=analyzer.finish();await writeFile(path+'.spectrum.json',JSON.stringify(data));return data})();pending.set(key,work);try{return await work}finally{pending.delete(key)}}}
+import { spawn } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
+import { createSpectrumAnalyzer, type Spectrum } from "../src/audio/spectrum";
+import type { Store } from "./store";
+export function createAnalysis(store: Store) {
+  const pending = new Map<string, Promise<Spectrum>>();
+  return async (id: string, audioId: string) => {
+    const key = id + audioId;
+    if (pending.has(key)) return pending.get(key)!;
+    const work = (async () => {
+      const path = await store.resolveAsset(id, audioId);
+      try {
+        return JSON.parse(
+          await readFile(path + ".spectrum.json", "utf8"),
+        ) as Spectrum;
+      } catch {}
+      const analyzer = createSpectrumAnalyzer(24000);
+      await new Promise<void>((resolve, reject) => {
+        const p = spawn("ffmpeg", [
+            "-v",
+            "error",
+            "-i",
+            path,
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            "24000",
+            "-f",
+            "f32le",
+            "pipe:1",
+          ]),
+          chunks: Buffer[] = [];
+        let leftover = Buffer.alloc(0),
+          error = "";
+        p.stdout.on("data", (chunk: Buffer) => {
+          const b = Buffer.concat([leftover, chunk]),
+            length = b.length - (b.length % 4);
+          const samples = new Float32Array(length / 4);
+          for (let i = 0; i < samples.length; i++)
+            samples[i] = b.readFloatLE(i * 4);
+          analyzer.push(samples);
+          leftover = b.subarray(length);
+        });
+        p.stderr.on("data", (d) => (error = (error + d).slice(-2000)));
+        p.on("error", reject);
+        p.on("close", (code) =>
+          code === 0 ? resolve() : reject(Error(error)),
+        );
+        setTimeout(() => p.kill(), 120000).unref();
+      });
+      const data = analyzer.finish();
+      await writeFile(path + ".spectrum.json", JSON.stringify(data));
+      return data;
+    })();
+    pending.set(key, work);
+    try {
+      return await work;
+    } finally {
+      pending.delete(key);
+    }
+  };
+}

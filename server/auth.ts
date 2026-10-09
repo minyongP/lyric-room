@@ -1,2 +1,24 @@
-import type {RequestHandler} from 'express';
-export function localGuard(origin:string,token:string):RequestHandler{const host=new URL(origin).host;return (req,res,next)=>{if(req.headers.host!==host||(req.headers.origin&&req.headers.origin!==origin)||(req.headers['sec-fetch-site']==='cross-site')){res.status(403).json({error:'허용되지 않은 요청입니다.'});return}if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers['x-session-token']!==token){res.status(403).json({error:'세션이 만료되었습니다. 새로고침해 주세요.'});return}next()}}
+import type { RequestHandler } from "express";
+export function localGuard(origin: string, token: string): RequestHandler {
+  const host = new URL(origin).host;
+  return (req, res, next) => {
+    if (
+      req.headers.host !== host ||
+      (req.headers.origin && req.headers.origin !== origin) ||
+      req.headers["sec-fetch-site"] === "cross-site"
+    ) {
+      res.status(403).json({ error: "허용되지 않은 요청입니다." });
+      return;
+    }
+    if (
+      !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+      req.headers["x-session-token"] !== token
+    ) {
+      res
+        .status(403)
+        .json({ error: "세션이 만료되었습니다. 새로고침해 주세요." });
+      return;
+    }
+    next();
+  };
+}
