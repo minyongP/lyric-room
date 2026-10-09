@@ -8,3 +8,7 @@
 - The Docker build installs Chromium and Linux dependencies through the locked Playwright version. Browser files are stored under `/ms-playwright`; their bundled notices and the Debian package notices remain in the image. The application license does not replace them.
 
 The app's Apache-2.0 license does not relicense these components or user media.
+
+## README example screenshots
+
+`docs/images/classic-example.jpg` and `docs/images/vinyl-example.jpg` are application renders using user-supplied artwork for the track “1991” by Kenshi Yonezu. The artwork remains the property of its respective rights holders and is not covered by the application’s Apache-2.0 license. The displayed lyric-area text is original demonstration copy, not the song’s lyrics. The audio file and standalone cover source are not distributed in this repository.
