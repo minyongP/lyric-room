@@ -6,6 +6,13 @@ import { layoutCue } from "./layout";
 import type { SceneMedia } from "./media";
 export const W = 1920,
   H = 1080;
+export function playerForeground(color: string) {
+  const luminance =
+    parseInt(color.slice(1, 3), 16) * 0.2126 +
+    parseInt(color.slice(3, 5), 16) * 0.7152 +
+    parseInt(color.slice(5, 7), 16) * 0.0722;
+  return luminance > 145 ? "#222226" : "#ffffff";
+}
 function round(ctx: CanvasRenderingContext2D, b: Box, r: number) {
   ctx.beginPath();
   ctx.roundRect(b.x, b.y, b.w, b.h, Math.min(r, b.h / 2, b.w / 2));
@@ -191,11 +198,7 @@ export function drawScene(
     ctx.restore();
     ix = cover.x + cover.w + 30;
   }
-  const luminance =
-    parseInt(s.playerColor.slice(1, 3), 16) * 0.2126 +
-    parseInt(s.playerColor.slice(3, 5), 16) * 0.7152 +
-    parseInt(s.playerColor.slice(5, 7), 16) * 0.0722;
-  ctx.fillStyle = luminance > 145 ? "#222226" : "#ffffff";
+  ctx.fillStyle = playerForeground(s.playerColor);
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   if (s.showTitle) {

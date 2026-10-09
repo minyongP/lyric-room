@@ -691,7 +691,7 @@ p {
 .scene-controls button {
   background: none;
   border: 0;
-  color: #15151a;
+  color: inherit;
   padding: 3px;
 }
 .scene-controls svg {

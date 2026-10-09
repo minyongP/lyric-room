@@ -21,7 +21,7 @@ import type { Box, ExportJob, Part, Style } from "../shared/project";
 import { formatTime } from "../shared/project";
 import { parseLyrics } from "../shared/lyrics";
 import { assetUrl, loadFonts } from "../scene/media";
-import { findOverflowCues } from "../scene/draw";
+import { findOverflowCues, playerForeground } from "../scene/draw";
 import { emptySpectrum, type Spectrum } from "../audio/spectrum";
 export default function App() {
   const state = useProject(),
@@ -477,12 +477,15 @@ export default function App() {
                   onOverflow={setOverflow}
                   playMode={playMode}
                 />
-                {playMode && p.style.showControls && (
+                {p.style.showControls && (
                   <div
                     className="scene-controls"
+                    role="group"
+                    aria-label="화면 내 재생 조작"
                     style={{
+                      color: playerForeground(p.style.playerColor),
                       left:
-                        (p.style.playerBox.x + p.style.playerBox.w * 0.58) /
+                        (p.style.playerBox.x + p.style.playerBox.w * 0.67) /
                           19.2 +
                         "%",
                       top:

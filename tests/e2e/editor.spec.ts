@@ -8,7 +8,9 @@ test("open one MP3, edit metadata/lyrics, save and reopen", async ({
     .getByTestId("audio-input")
     .setInputFiles(path.resolve(".local-data/fixtures/짧은 샘플.mp3"));
   await expect(
-    page.getByRole("button", { name: "재생", exact: true }),
+    page
+      .locator(".transport")
+      .getByRole("button", { name: "재생", exact: true }),
   ).toBeEnabled();
   await page
     .getByRole("button", { name: "플레이어 편집", exact: true })
@@ -43,11 +45,19 @@ test("open one MP3, edit metadata/lyrics, save and reopen", async ({
     .click();
   await page.getByRole("button", { name: "가사 편집", exact: true }).click();
   await expect(page.getByLabel("원문 1")).toHaveValue("테스트 가사");
-  await page.getByRole("button", { name: "재생", exact: true }).click();
+  await page
+    .locator(".transport")
+    .getByRole("button", { name: "재생", exact: true })
+    .click();
   await expect(
-    page.getByRole("button", { name: "일시정지", exact: true }),
+    page
+      .locator(".transport")
+      .getByRole("button", { name: "일시정지", exact: true }),
   ).toBeVisible();
   await page.waitForTimeout(600);
-  await page.getByRole("button", { name: "일시정지", exact: true }).click();
+  await page
+    .locator(".transport")
+    .getByRole("button", { name: "일시정지", exact: true })
+    .click();
   expect(await page.getByLabel("재생 위치").inputValue()).not.toBe("0");
 });
