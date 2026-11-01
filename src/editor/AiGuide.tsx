@@ -12,7 +12,7 @@ export function AiGuide({
   const dialog = useRef<HTMLDialogElement>(null),
     field = useRef<HTMLTextAreaElement>(null);
   const [message, setMessage] = useState("");
-  const [language, setLanguage] = useState<GuideLanguage>("ko");
+  const [language, setLanguage] = useState<GuideLanguage>("auto");
   const selected = guideLanguages.find((x) => x.id === language)!;
   const prompt = buildAiPrompt(language, duration);
   useEffect(() => {
@@ -36,8 +36,8 @@ export function AiGuide({
         </button>
       </div>
       <p>
-        곡 종류를 선택하고, 오디오 파일을 직접 분석할 수 있는 AI에 MP3·원문
-        가사·요청문을 함께 보내세요. 현재 곡 길이가 요청문에 반영됩니다.
+        MP3와 아래 요청문을 오디오 분석을 지원하는 AI에 함께 보내세요. 기본값은
+        언어 자동 감지이며, 필요하면 곡 종류를 직접 선택할 수 있습니다.
       </p>
       <fieldset className="guide-languages">
         <legend>곡 종류</legend>
@@ -65,19 +65,20 @@ export function AiGuide({
       <p className="guide-language-summary">{selected.description}</p>
       <ol className="guide-steps">
         <li>
-          <strong>MP3와 원문 가사 준비</strong>
+          <strong>MP3 첨부하기</strong>
           <p>
-            편집 중인 MP3를 AI 대화에 첨부하고 직접 준비한 원문 가사를
-            붙여넣으세요. 제공한 가사의 시간 정렬·변환을 요청하는 방식입니다. 이
-            앱이 파일을 AI에 자동 전송하지는 않습니다.
+            편집 중인 MP3를 AI 대화에 첨부하세요. 원문 가사가 있다면 참고 자료로
+            함께 보낼 수 있지만 필수는 아닙니다. 앱이 파일을 AI에 자동
+            전송하지는 않습니다.
           </p>
         </li>
         <li>
           <strong>요청문 복사해서 보내기</strong>
           <p>
-            선택한 곡 종류에 맞는 요청문을 복사합니다. 요청문 맨 아래에 원문
-            가사를 넣어 보내세요. AI마다 오디오 분석과 텍스트 처리의 지원 범위는
-            다를 수 있습니다.
+            요청문을 복사해 MP3와 함께 보내세요. 특정 서비스에 한정되지 않는
+            요청문이며, 현재 곡 길이와 가져오기에 필요한 JSON 형식이 포함됩니다.
+            오디오 분석 지원 여부와 처리 가능한 범위는 사용하는 AI에 따라
+            다릅니다.
           </p>
         </li>
         <li>
