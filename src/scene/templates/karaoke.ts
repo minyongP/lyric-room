@@ -11,7 +11,16 @@ export function karaokeRows(
   p: Project,
   time: number,
 ): ReturnType<typeof lyricMotion> {
-  const index = p.lyrics.findIndex((c) => time >= c.start && time < c.end);
+  let index = p.lyrics.findIndex((c) => time >= c.start && time < c.end);
+  // Hold both rows through a short breath; do not extend the sung timing.
+  if (index < 0) {
+    const next = p.lyrics.findIndex((c) => c.start > time);
+    if (next > 0) {
+      const previous = p.lyrics[next - 1];
+      if (time >= previous.end && p.lyrics[next].start - previous.end < 5)
+        index = next - 1;
+    }
+  }
   if (index < 0)
     return lyricMotion(p.lyrics, p.duration, time).filter((row) => !!row.label);
   return [index, index + 1]
