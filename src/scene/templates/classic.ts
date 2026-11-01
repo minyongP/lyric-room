@@ -4,6 +4,7 @@ import { formatTime } from "../../shared/project";
 import type { SceneTemplate } from "./types";
 export const classic: SceneTemplate = {
   lyricsPanel: true,
+  lyricsStep: 0.26,
   drawForeground(ctx, p, t, spectrum, media) {
     const s = p.style,
       family = fontFamily(p);
