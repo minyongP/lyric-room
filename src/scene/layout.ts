@@ -20,7 +20,7 @@ export function layoutCue(
 ) {
   let size = fontSize;
   for (;;) {
-    const lines: { text: string; size: number }[] = [];
+    const lines: { text: string; size: number; source: number }[] = [];
     for (const [i, text] of [
       cue.original,
       cue.pronunciation,
@@ -31,11 +31,11 @@ export function layoutCue(
       let line = "";
       for (const char of Array.from(text)) {
         if (char === "\n" || (line && measure(line + char, s) > width)) {
-          lines.push({ text: line, size: s });
+          lines.push({ text: line, size: s, source: i });
           line = char === "\n" ? "" : char;
         } else line += char;
       }
-      if (line) lines.push({ text: line, size: s });
+      if (line) lines.push({ text: line, size: s, source: i });
     }
     const total = lines.reduce((n, l) => n + l.size * 1.3 + gap, 0);
     if (total <= height || size <= 24)

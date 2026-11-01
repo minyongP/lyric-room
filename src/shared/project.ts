@@ -17,6 +17,7 @@ export const boxSchema = z
 export const styleSchema = z.object({
   fontSize: num(24, 80),
   textColor: color,
+  karaokeColor: color.default("#ffdd55"),
   panelOpacity: num(0, 1),
   panelColor: color,
   panelRadius: num(0, 80),
@@ -83,6 +84,7 @@ export type Project = z.infer<typeof projectSchema>;
 export const defaultStyle: Style = {
   fontSize: 52,
   textColor: "#ffffff",
+  karaokeColor: "#ffdd55",
   panelOpacity: 0.32,
   panelColor: "#252528",
   panelRadius: 40,

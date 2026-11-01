@@ -7,6 +7,7 @@ for (const [bg, template] of [
   ["background.png", "classic"],
   ["background.mp4", "classic"],
   ["background.png", "vinyl"],
+  ["background.png", "karaoke"],
 ] as const)
   test(
     "actual 1080p export with " + bg + " / " + template,

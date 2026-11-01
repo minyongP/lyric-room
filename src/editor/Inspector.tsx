@@ -278,6 +278,15 @@ export function Inspector({
             ])}
             {slider("lineGap", "줄 간격", 0, 40)}
             {color("textColor", "글자 색상")}
+            {p.templateId === "karaoke" && (
+              <>
+                {color("karaokeColor", "노래방 강조 색상")}
+                <p className="hint">
+                  구절의 시작부터 끝까지 색이 일정하게 채워집니다. 정확한 음절별
+                  타이밍은 아닙니다. 짧은 구절로 나누면 더 잘 맞습니다.
+                </p>
+              </>
+            )}
             <h3>가사 패널</h3>
             {color("panelColor", "패널 색상")}
             {slider("panelOpacity", "패널 농도", 0, 1, 0.05)}
@@ -504,6 +513,7 @@ export function Inspector({
       {guide && (
         <AiGuide
           duration={p.duration}
+          karaoke={p.templateId === "karaoke"}
           onClose={() => setGuide(false)}
           onImport={() => {
             setGuide(false);

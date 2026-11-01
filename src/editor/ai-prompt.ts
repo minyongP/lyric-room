@@ -42,7 +42,11 @@ export const guideLanguages = [
   },
 ] as const;
 export type GuideLanguage = (typeof guideLanguages)[number]["id"];
-export function buildAiPrompt(language: GuideLanguage, duration: number) {
+export function buildAiPrompt(
+  language: GuideLanguage,
+  duration: number,
+  karaoke = false,
+) {
   const item = guideLanguages.find((x) => x.id === language)!;
   const example = {
     schemaVersion: 1,
@@ -60,7 +64,16 @@ export function buildAiPrompt(language: GuideLanguage, duration: number) {
       },
     ],
   };
+  const mode = karaoke
+    ? `노래방 템플릿에 사용할 가사입니다. 현재 구절과 다음 구절을 두 줄로 표시하고, 각 구절의 start부터 end까지 첫 번째 표시 문구의 색이 왼쪽에서 오른쪽으로 일정하게 채워집니다.
+- 원문은 한 화면에서 읽기 좋은 짧은 구절로 나누어 주세요. 긴 문장이나 여러 문장을 하나의 항목으로 합치지 마세요.
+- 실제 발음과 호흡을 기준으로 구절을 나누고, 특히 첫 발음 시작과 마지막 발음 종료를 정확히 맞춰 주세요. 긴 쉼을 하나의 구절 안에 포함하지 마세요.
+- 글자 수에 비례한 시간 추측이나 일정한 간격으로 시간 나누기는 하지 마세요. 실제 음원을 기준으로 확인해 주세요.
+- 현재 형식은 구절 단위 시간만 지원합니다. words, syllables 등 별도 단어·음절 필드를 추가하지 마세요. 정확한 음절별 강조를 위한 데이터라고 설명하지 마세요.
+- 외국어 발음과 번역은 같은 구절에 대응시켜 주세요. 노래방 화면은 기본적으로 원문을 표시하며, 발음·번역은 사용자가 선택해 켤 수 있습니다.`
+    : "일반 가사 템플릿에 사용할 타임라인입니다. 화면에서 읽기 좋은 자연스러운 구절로 나누어 주세요.";
   return template
+    .replace("{{mode}}", mode)
     .replace(
       "{{duration}}",
       Number.isFinite(duration) && duration > 0

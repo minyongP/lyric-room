@@ -19,7 +19,7 @@ npm run dev
 
 ## 템플릿의 구성
 
-템플릿은 **데이터 프리셋**과 **Canvas 그리기 구현**으로 나뉩니다. 시작 화면은 등록된 프리셋으로 선택 카드를 만들고, 미리보기와 MP4 출력은 같은 렌더러를 사용합니다. 현재 예시는 `classic`과 `vinyl`입니다.
+템플릿은 **데이터 프리셋**과 **Canvas 그리기 구현**으로 나뉩니다. 시작 화면은 등록된 프리셋으로 선택 카드를 만들고, 미리보기와 MP4 출력은 같은 렌더러를 사용합니다. 현재 예시는 `classic`, `vinyl`, `karaoke`입니다.
 
 | 파일 | 역할 |
 | --- | --- |
@@ -30,6 +30,7 @@ npm run dev
 | `src/scene/templates/index.ts` | ID별 렌더러 등록 |
 | `src/scene/templates/classic.ts` | 기존 가사 패널·하단 플레이어 예시 |
 | `src/scene/templates/vinyl.ts` | 시간 기반 회전 커버·하향 스펙트럼 예시 |
+| `src/scene/templates/karaoke.ts` | 현재·다음 구절 선택과 시간 기반 색 채움 계산 |
 | `src/scene/draw.ts` | 배경·가사 공통 렌더링과 템플릿 호출 |
 | `src/scene/primitives.ts` | 이미지 배치·폰트·둥근 박스 등 공통 그리기 |
 | `src/editor/TemplatePicker.tsx` | 선택 카드와 템플릿 변경 창 |
@@ -130,3 +131,5 @@ PR에는 해결하려는 문제, 변경된 사용 흐름, 실행한 검증과 �
 ## 라이선스와 자료
 
 기여하는 코드에는 프로젝트의 [Apache License 2.0](LICENSE)이 적용됩니다. 이미지·폰트·추가 라이브러리를 포함한다면 출처와 라이선스를 확인하고 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 갱신하세요. 사용자 음원, 상용 앨범 아트, 전체 가사, 개인 프로젝트 데이터, 비밀 키를 저장소나 테스트 결과물에 포함하지 마세요.
+
+노래방 템플릿은 `SceneTemplate.karaoke`로 공통 렌더러의 두 구절 표시와 색 채움을 사용합니다. `layoutCue`의 `source`는 원문(0)·발음(1)·번역(2)을 구분하며, 처음 표시되는 문구만 강조하고 보조 문구는 고정 색으로 표시합니다. `tests/e2e/karaoke.spec.ts`에서 색 채움 진행·탐색 재현성·공백과 전용 AI 요청문을 검증합니다. 세부 음절 타이밍을 추가하려면 JSON 검증·가져오기·AI 요청문·저장 호환성을 함께 설계해 주세요.

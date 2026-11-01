@@ -36,6 +36,29 @@ export const templates: TemplateDefinition[] = [
       showControls: false,
     },
   },
+  {
+    id: "karaoke",
+    name: "노래방",
+    description: "큰 두 줄 가사와 왼쪽부터 채워지는 노래방 효과",
+    style: {
+      lyricsBox: { x: 100, y: 450, w: 1720, h: 410 },
+      playerBox: { x: 100, y: 950, w: 1720, h: 90 },
+      fontSize: 80,
+      lineGap: 8,
+      panelOpacity: 0.18,
+      panelColor: "#000000",
+      panelRadius: 20,
+      showPronunciation: false,
+      showTranslation: false,
+      showCover: false,
+      showControls: false,
+      showVisualizer: false,
+      playerColor: "#17171c",
+      playerOpacity: 0.65,
+      infoSize: 30,
+      backgroundBrightness: 0.5,
+    },
+  },
 ];
 export function templateStyle(id: TemplateId): Style {
   const definition = templates.find((t) => t.id === id);

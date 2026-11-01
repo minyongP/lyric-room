@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { buildAiPrompt, guideLanguages, type GuideLanguage } from "./ai-prompt";
 export function AiGuide({
   duration,
+  karaoke = false,
   onClose,
   onImport,
 }: {
   duration: number;
+  karaoke?: boolean;
   onClose: () => void;
   onImport: () => void;
 }) {
@@ -14,7 +16,7 @@ export function AiGuide({
   const [message, setMessage] = useState("");
   const [language, setLanguage] = useState<GuideLanguage>("auto");
   const selected = guideLanguages.find((x) => x.id === language)!;
-  const prompt = buildAiPrompt(language, duration);
+  const prompt = buildAiPrompt(language, duration, karaoke);
   useEffect(() => {
     dialog.current?.showModal();
     return () => dialog.current?.close();
@@ -39,6 +41,12 @@ export function AiGuide({
         MP3와 아래 요청문을 오디오 분석을 지원하는 AI에 함께 보내세요. 기본값은
         언어 자동 감지이며, 필요하면 곡 종류를 직접 선택할 수 있습니다.
       </p>
+      {karaoke && (
+        <p className="guide-language-summary">
+          노래방용 요청문: 짧은 구절과 실제 보컬 시작·종료 시간을 요청합니다.
+          강조 색은 구절 시간에 따라 일정하게 채워집니다.
+        </p>
+      )}
       <fieldset className="guide-languages">
         <legend>곡 종류</legend>
         <div>

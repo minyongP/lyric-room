@@ -3,6 +3,7 @@ import type { Spectrum } from "../../audio/spectrum";
 import type { SceneMedia } from "../media";
 export interface SceneTemplate {
   lyricsPanel: boolean;
+  karaoke?: boolean;
   lyricsAnchor?: number;
   lyricsStep?: number;
   hidePrevious?: boolean;

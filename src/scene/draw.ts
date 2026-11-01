@@ -1,3 +1,4 @@
+import { karaokeRows, karaokeProgress } from "./templates/karaoke";
 import { sceneTemplates } from "./templates";
 import { round, image, fontFamily } from "./primitives";
 export { playerForeground } from "./primitives";
@@ -96,7 +97,9 @@ export function drawScene(
     if (renderer.lyricsPanel) ctx.fill();
     ctx.globalAlpha = 1;
     ctx.clip();
-    const rows = lyricMotion(p.lyrics, p.duration, t);
+    const rows = renderer.karaoke
+      ? karaokeRows(p, t)
+      : lyricMotion(p.lyrics, p.duration, t);
     for (const row of rows) {
       if (row.opacity <= 0) continue;
       const y =
@@ -142,9 +145,50 @@ export function drawScene(
         let cy = -layout.height / 2;
         ctx.textBaseline = "top";
         ctx.textAlign = s.align;
-        for (const line of layout.lines) {
+        const primary = layout.lines[0]?.source;
+        const widths = layout.lines.map((line) => {
           ctx.font = `700 ${line.size}px ${family}`;
+          return ctx.measureText(line.text).width;
+        });
+        const total = widths.reduce(
+          (sum, width, i) =>
+            sum + (layout.lines[i].source === primary ? width : 0),
+          0,
+        );
+        let remaining =
+          renderer.karaoke && row.offset === 0
+            ? total *
+              karaokeProgress(p.lyrics[row.cue].start, p.lyrics[row.cue].end, t)
+            : 0;
+        for (const [lineIndex, line] of layout.lines.entries()) {
+          ctx.font = `700 ${line.size}px ${family}`;
+          if (renderer.karaoke) {
+            ctx.strokeStyle = "#111118";
+            ctx.lineWidth = 5;
+            ctx.lineJoin = "round";
+            ctx.strokeText(line.text, 0, cy);
+          }
           ctx.fillText(line.text, 0, cy);
+          if (renderer.karaoke && line.source === primary) {
+            const width = widths[lineIndex],
+              fill = Math.min(width, Math.max(0, remaining));
+            if (fill > 0) {
+              ctx.save();
+              ctx.beginPath();
+              const left =
+                s.align === "center"
+                  ? -width / 2
+                  : s.align === "right"
+                    ? -width
+                    : 0;
+              ctx.rect(left, cy - 4, fill, line.size * 1.5 + 8);
+              ctx.clip();
+              ctx.fillStyle = s.karaokeColor ?? "#ffdd55";
+              ctx.fillText(line.text, 0, cy);
+              ctx.restore();
+            }
+            remaining -= width;
+          }
           cy += line.size * 1.3 + s.lineGap;
         }
       }
